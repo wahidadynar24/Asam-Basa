@@ -202,7 +202,7 @@ export default function App() {
       {/* Footer Aplikasi */}
       <footer className="app-footer">
         <div className="footer-content">
-          <p>© Web Pembelajaran Kimia Asam-Basa Berbasis Model 5E — Siswa SMA Kelas XI</p>
+          <p>© <strong>Chemify</strong> — Web Pembelajaran Kimia Asam-Basa Berbasis Model 5E (SMA Kelas XI)</p>
           <span className="footer-subtext">Dirancang untuk pemahaman konsep abstrak secara visual dan bermakna.</span>
         </div>
       </footer>

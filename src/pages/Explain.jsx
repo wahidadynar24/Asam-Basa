@@ -169,48 +169,88 @@ export default function Explain({ onPrev, onNext }) {
             <div className="section-intro-box">
               <h3>{THEORY_MATERIALS[3].title}</h3>
               <p>
-                Kesalahan paling sering terjadi adalah menyamakan konsep kekuatan (asam kuat) dengan kepekatan (asam pekat). Keduanya memiliki definisi yang sama sekali berbeda!
+                Banyak siswa keliru menyamakan konsep <strong>"Kekuatan"</strong> (Asam Kuat/Lemah) dengan <strong>"Kepekatan"</strong> (Asam Pekat/Encer). Keduanya adalah dua sifat yang berbeda secara mendasar!
               </p>
             </div>
 
+            {/* Analogi Kehidupan Sehari-hari */}
+            <div className="analogy-card">
+              <div className="analogy-header">
+                <h4>{THEORY_MATERIALS[3].analogy.title}</h4>
+                <p>{THEORY_MATERIALS[3].analogy.story}</p>
+              </div>
+              <div className="analogy-points-grid">
+                {THEORY_MATERIALS[3].analogy.points.map((pt, idx) => (
+                  <div key={idx} className="analogy-point-item">
+                    <span className="analogy-tag">{pt.label}</span>
+                    <p>{pt.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Perbandingan Definisi Operasional */}
             <div className="comparison-cards-grid">
-              <div className="comp-card card-strength">
-                <div className="comp-badge badge-strength">Kekuatan Asam / Basa</div>
-                <h4>Derajat Ionisasi (α)</h4>
-                <p className="comp-lead">Berapa persen molekul yang berhasil terurai menjadi ion di air.</p>
+              <div className="comp-card card-concentration">
+                <div className="comp-badge badge-concentration">1. Kepekatan (Konsentrasi)</div>
+                <h4>Jumlah Partikel Zat Terlarut</h4>
+                <div className="comp-formula-chip">Molaritas (M) = mol zat / Liter larutan</div>
+                <p className="comp-question">❓ <em>"{THEORY_MATERIALS[3].comparisons[0].question}"</em></p>
                 
                 <div className="comp-detail-box">
-                  <strong>⚡ Asam / Basa Kuat:</strong>
-                  <p>Terionisasi sempurna 100% (α = 1). Reaksi satu arah (→).</p>
-                  <code>HCl → H⁺ + Cl⁻</code>
+                  <strong>💧 Pekat (Konsentrasi Tinggi):</strong>
+                  <p>{THEORY_MATERIALS[3].comparisons[0].pekatDesc}</p>
                 </div>
 
                 <div className="comp-detail-box">
-                  <strong>🍃 Asam / Basa Lemah:</strong>
-                  <p>Hanya terionisasi sebagian kecil (α &lt; 1, Ka atau Kb). Reaksi kesetimbangan (⇌).</p>
-                  <code>CH₃COOH ⇌ H⁺ + CH₃COO⁻</code>
+                  <strong>🌊 Encer (Konsentrasi Rendah):</strong>
+                  <p>{THEORY_MATERIALS[3].comparisons[0].encerDesc}</p>
                 </div>
               </div>
 
-              <div className="comp-card card-concentration">
-                <div className="comp-badge badge-concentration">Kepekatan (Konsentrasi)</div>
-                <h4>Jumlah Zat Terlarut (Molaritas / M)</h4>
-                <p className="comp-lead">Berapa banyak mol zat yang dilarutkan ke dalam 1 liter larutan.</p>
-
+              <div className="comp-card card-strength">
+                <div className="comp-badge badge-strength">2. Kekuatan Asam / Basa</div>
+                <h4>Kemudahan Terurai Menjadi Ion</h4>
+                <div className="comp-formula-chip">Derajat Ionisasi (α) = ion terurai / molekul awal</div>
+                <p className="comp-question">❓ <em>"{THEORY_MATERIALS[3].comparisons[1].question}"</em></p>
+                
                 <div className="comp-detail-box">
-                  <strong>💧 Larutan Pekat:</strong>
-                  <p>Banyak zat terlarut dalam sedikit pelarut (misal 5 M, 10 M).</p>
+                  <strong>⚡ Asam/Basa Kuat:</strong>
+                  <p>{THEORY_MATERIALS[3].comparisons[1].strongDesc}</p>
+                  <code>HCl (aq) → H⁺ (aq) + Cl⁻ (aq)</code>
                 </div>
 
                 <div className="comp-detail-box">
-                  <strong>🌊 Larutan Encer:</strong>
-                  <p>Sedikit zat terlarut dalam banyak pelarut (misal 0,001 M, 0,0001 M).</p>
-                </div>
-
-                <div className="warning-callout">
-                  ⚠️ <strong>Contoh Nyata:</strong> Larutan CH₃COOH 10 M adalah <em>Asam Lemah yang Pekat</em>. Sebaliknya, larutan HCl 0,0001 M adalah <em>Asam Kuat yang Encer</em>!
+                  <strong>🍃 Asam/Basa Lemah:</strong>
+                  <p>{THEORY_MATERIALS[3].comparisons[1].weakDesc}</p>
+                  <code>CH₃COOH (aq) ⇌ H⁺ (aq) + CH₃COO⁻ (aq)</code>
                 </div>
               </div>
+            </div>
+
+            {/* Matriks 4 Kuadran Kombinasi Nyata */}
+            <div className="quadrant-matrix-section">
+              <h4 className="matrix-title">📌 Matriks 4 Kondisi Nyata: Kekuatan vs Kepekatan</h4>
+              <p className="matrix-subtitle">Perhatikan bagaimana asam kuat bisa encer, dan asam lemah bisa sangat pekat:</p>
+              
+              <div className="quadrants-grid">
+                {THEORY_MATERIALS[3].quadrants.map((q, idx) => (
+                  <div key={idx} className="quadrant-card" style={{ borderTopColor: q.color }}>
+                    <div className="quadrant-badge" style={{ backgroundColor: `${q.color}15`, color: q.color }}>
+                      {q.badge}
+                    </div>
+                    <h5 className="quadrant-example">{q.example}</h5>
+                    <p className="quadrant-desc"><strong>Karakteristik:</strong> {q.desc}</p>
+                    <div className="quadrant-effect">
+                      <span>Dampak: {q.effect}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="warning-callout">
+              💡 <strong>Kesimpulan Penting:</strong> Kekuatan ditentukan oleh <em>sifat jenis zat</em> ($\alpha$), sedangkan kepekatan ditentukan oleh <em>banyaknya zat yang kamu larutkan</em> ($M$). Keduanya independen!
             </div>
           </div>
         )}

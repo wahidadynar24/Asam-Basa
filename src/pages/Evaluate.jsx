@@ -101,11 +101,9 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
         <div className="question-header">
           <span className="question-topic-pill">{currentQuestion.topic}</span>
           <span className="question-type-pill">
-            {currentQuestion.type === 'multiple_choice' && 'Pilihan Ganda'}
-            {currentQuestion.type === 'true_false' && 'Benar / Salah'}
-            {currentQuestion.type === 'calculation' && 'Perhitungan pH'}
-            {currentQuestion.type === 'matching' && 'Mencocokkan Teori'}
-            {currentQuestion.type === 'analysis' && 'Analisis Skenario'}
+            {currentQuestion.type === 'multiple_choice' && 'Pilihan Ganda (A-E)'}
+            {currentQuestion.type === 'calculation' && 'Perhitungan pH (A-E)'}
+            {currentQuestion.type === 'analysis' && 'Analisis Konseptual (A-E)'}
           </span>
         </div>
 

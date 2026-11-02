@@ -5,7 +5,7 @@ export default function Home({ onStart }) {
     <div className="page-container page-home">
       {/* Hero Section */}
       <section className="home-hero">
-        <div className="hero-badge">🔬 Modul Interaktif Kimia SMA Kelas XI</div>
+        <div className="hero-badge">🔬 Chemify • Modul Interaktif Kimia SMA Kelas XI</div>
         <h1 className="hero-title">
           Jelajahi Dunia <span className="highlight-acid">Asam</span> &amp; <span className="highlight-base">Basa</span> Secara Nyata
         </h1>

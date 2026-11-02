@@ -196,7 +196,7 @@ export default function Results({
                   <p className="rev-question">{q.question}</p>
                   <div className="rev-detail">
                     <span className="rev-ans-label">Kunci Jawaban:</span>
-                    <strong>{q.options.find((o) => o.id === q.correctAnswer)?.text}</strong>
+                    <strong>[{q.correctAnswer.toUpperCase()}] {q.options.find((o) => o.id === q.correctAnswer)?.text}</strong>
                   </div>
                   <p className="rev-explanation">💡 <em>{q.explanation}</em></p>
                 </div>

@@ -1210,26 +1210,62 @@
   font-weight: 800;
   padding: 0.15rem 0.45rem;
   border-radius: var(--radius-full);
-  animation: floatIon 3s ease-in-out infinite alternate;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   font-family: var(--font-mono);
+  user-select: none;
+  cursor: default;
 }
 
-@keyframes floatIon {
+/* 4 Variasi Gerakan Melayang Abstrak Partikel Ion (Brownian Motion) */
+.anim-drift-0 {
+  animation: driftA 3.2s ease-in-out infinite alternate;
+}
+.anim-drift-1 {
+  animation: driftB 3.8s ease-in-out infinite alternate;
+}
+.anim-drift-2 {
+  animation: driftC 4.2s ease-in-out infinite alternate;
+}
+.anim-drift-3 {
+  animation: driftD 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes driftA {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(7px, -9px) rotate(4deg); }
+  100% { transform: translate(-4px, -5px) rotate(-3deg); }
+}
+
+@keyframes driftB {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-8px, 6px) rotate(-5deg); }
+  100% { transform: translate(5px, 8px) rotate(4deg); }
+}
+
+@keyframes driftC {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6px, 7px) scale(1.06); }
+  100% { transform: translate(-6px, -7px) scale(0.96); }
+}
+
+@keyframes driftD {
   0% { transform: translate(0, 0); }
-  100% { transform: translate(4px, -6px); }
+  50% { transform: translate(-6px, -9px); }
+  100% { transform: translate(7px, -3px); }
 }
 
 .ion-h {
   background: #ef4444;
   color: #ffffff;
   border: 1px solid #b91c1c;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
 }
 
 .ion-oh {
   background: #3b82f6;
   color: #ffffff;
   border: 1px solid #1d4ed8;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.45);
 }
 
 .ion-cl {
@@ -1241,11 +1277,20 @@
 .ion-acetate {
   background: #f97316;
   color: #ffffff;
+  border: 1px solid #ea580c;
 }
 
 .ion-na {
   background: #8b5cf6;
   color: #ffffff;
+  border: 1px solid #7c3aed;
+}
+
+.ion-nh4 {
+  background: #0284c7;
+  color: #ffffff;
+  border: 1px solid #0369a1;
+  box-shadow: 0 0 6px rgba(2, 132, 199, 0.35);
 }
 
 .molecule-neutral {
@@ -1256,9 +1301,96 @@
 }
 
 .molecule-h2o {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.85);
   color: #0369a1;
   border: 1px solid #bae6fd;
+}
+
+/* Monitor Dinamis Jumlah Ion */
+.ion-count-monitor {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.95rem;
+  margin-bottom: 0.85rem;
+}
+
+.ion-monitor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.55rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ion-monitor-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.ion-monitor-status {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.ion-bars-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.ion-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ion-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  color: #475569;
+}
+
+.ion-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ion-bar-label .ion-qty {
+  margin-left: auto;
+  color: #0f172a;
+  font-family: var(--font-mono);
+}
+
+.ion-bar-track {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ion-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.35s ease-out;
+}
+
+.ion-bar-fill.fill-h {
+  background: linear-gradient(90deg, #f87171, #ef4444);
+}
+
+.ion-bar-fill.fill-oh {
+  background: linear-gradient(90deg, #60a5fa, #3b82f6);
 }
 
 .ion-legend {
@@ -1284,6 +1416,10 @@
 
 .dot-h { background: #ef4444; }
 .dot-oh { background: #3b82f6; }
+.dot-cl { background: #10b981; }
+.dot-acetate { background: #f97316; }
+.dot-na { background: #8b5cf6; }
+.dot-nh4 { background: #0284c7; }
 .dot-molecule { background: #94a3b8; }
 .dot-h2o { background: #0ea5e9; }
 
@@ -1809,6 +1945,154 @@
   border-radius: 4px;
 }
 
+/* Analogi Teh Manis & Kartu Kepekatan */
+.analogy-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.analogy-header h4 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #166534;
+  margin-bottom: 0.25rem;
+}
+
+.analogy-header p {
+  font-size: 0.9rem;
+  color: #15803d;
+  margin-bottom: 1rem;
+}
+
+.analogy-points-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.analogy-point-item {
+  background: #ffffff;
+  border: 1px solid #86efac;
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+}
+
+.analogy-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.5rem;
+}
+
+.analogy-point-item p {
+  font-size: 0.85rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.comp-formula-chip {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #0369a1;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+}
+
+.comp-question {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+/* Matriks 4 Kuadran Kepekatan vs Kekuatan */
+.quadrant-matrix-section {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.matrix-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.35rem;
+}
+
+.matrix-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.quadrants-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.quadrant-card {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-top: 4px solid #0284c7;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quadrant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.quadrant-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.quadrant-example {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.quadrant-desc {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.quadrant-effect {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  background: #ffffff;
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid #64748b;
+  margin-top: auto;
+}
+
 .warning-callout {
   background: #fffbeb;
   border: 1px solid #fde68a;
@@ -2232,6 +2516,403 @@
   font-size: 0.8rem;
   color: #475569;
   line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   ELABORATE: KASUS 1 (NARASI & ESAI) + KASUS 3 (SOAL 2-TIER)
+   -------------------------------------------------------------------------- */
+.narrative-case-box {
+  background: #fdfbf7;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+.narrative-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.narrative-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #c2410c;
+  background: #ffedd5;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.narrative-patient {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #7c2d12;
+}
+
+.narrative-body p {
+  font-size: 0.92rem;
+  color: #334155;
+  line-height: 1.6;
+  margin-bottom: 0.85rem;
+}
+
+.narrative-diagnosis-box {
+  background: #ffffff;
+  border: 1px solid #fdba74;
+  border-left: 4px solid #ea580c;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.15rem;
+  font-size: 0.88rem;
+  color: #431407;
+}
+
+.narrative-diagnosis-box p {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+  color: #475569;
+}
+
+.beverage-list-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 0.5rem;
+}
+
+/* Tantangan Esai */
+.case-essay-box {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.essay-prompt-header h4 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.essay-prompt-text {
+  font-size: 0.9rem;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.essay-prompt-text ol {
+  padding-left: 1.25rem;
+  margin-top: 0.4rem;
+}
+
+.essay-prompt-text li {
+  margin-bottom: 0.25rem;
+}
+
+.essay-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.essay-label {
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.essay-textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  color: #0f172a;
+  background: #ffffff;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.essay-textarea:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.essay-action-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-submit-essay {
+  padding: 0.75rem 1.5rem;
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.2);
+}
+
+.btn-submit-essay:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
+.essay-saved-chip {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+}
+
+/* Feedback Rubrik Esai */
+.essay-model-feedback-card {
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.model-feedback-header .fb-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-bottom: 0.35rem;
+}
+
+.model-feedback-header h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.rubric-checklist h5 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.rubric-checklist ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.rubric-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.check-bullet {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+.model-answer-quote {
+  background: #f8fafc;
+  border-left: 3px solid #0284c7;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  color: #1e293b;
+  line-height: 1.55;
+}
+
+/* Kasus 3: Soal Diagnostik 2-Tier */
+.two-tier-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.two-tier-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.two-tier-card-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+}
+
+.two-tier-num {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-bottom: 0.35rem;
+}
+
+.two-tier-card-header h4 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.tier-section {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.tier-label-chip {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0284c7;
+  margin-bottom: 0.4rem;
+}
+
+.tier-2-chip {
+  color: #7c3aed;
+}
+
+.tier-prompt {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.85rem;
+}
+
+.tier-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tier-opt-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  color: #334155;
+  text-align: left;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tier-opt-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.tier-opt-btn.selected {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  color: #0284c7;
+  font-weight: 700;
+}
+
+.tier-opt-key {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.tier-opt-btn.selected .tier-opt-key {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.btn-check-tier {
+  padding: 0.75rem 1.5rem;
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+}
+
+.btn-check-tier:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.btn-check-tier:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tier-feedback-card {
+  padding: 1.15rem 1.35rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tier-feedback-card.fb-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.tier-feedback-card.fb-warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.fb-result-tag {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.fb-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 /* --------------------------------------------------------------------------

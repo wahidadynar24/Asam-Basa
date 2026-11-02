@@ -87,20 +87,71 @@ export const THEORY_MATERIALS = [
   },
   {
     id: 'strength_vs_concentration',
-    title: 'Asam-Basa Kuat vs Lemah vs Pekat',
-    subtitle: 'Membedakan derajat ionisasi (α) dan kepekatan (Molaritas)',
+    title: 'Kepekatan (Konsentrasi) vs Kekuatan Asam-Basa',
+    subtitle: 'Membedakan Molaritas partikel (Pekat/Encer) dan Derajat Ionisasi α (Kuat/Lemah)',
     icon: '⚡',
+    analogy: {
+      title: '🍵 Analogi Sederhana: Segelas Teh Manis',
+      story: 'Bayangkan kamu membuat teh manis di dua gelas berbeda:',
+      points: [
+        {
+          label: 'Kepekatan (Konsentrasi)',
+          text: 'Seberapa BANYAK sendok gula yang kamu masukkan. 5 sendok gula dalam segelas kecil teh = SANGAT PEKAT (manis pekat). 1 sendok teh dalam teko besar = ENCER.'
+        },
+        {
+          label: 'Kekuatan Zat (Ionisasi)',
+          text: 'Sifat alami zat itu sendiri: Apakah zat tersebut langsung larut dan terurai 100% sempurna tanpa sisa (Kuat), atau sebagian besar butirannya tetap mengendap utuh (Lemah).'
+        }
+      ]
+    },
     comparisons: [
       {
-        aspect: 'Kekuatan (Kuat vs Lemah)',
-        detail: 'Ditentukan oleh DERAJAT IONISASI (α), yaitu seberapa banyak zat yang terurai menjadi ion di air.',
-        strong: 'Asam/Basa Kuat: Terionisasi 100% sempurna (α = 1). Reaksi berkesudahan (→). Contoh: HCl, H₂SO₄, HNO₃, NaOH, KOH.',
-        weak: 'Asam/Basa Lemah: Terionisasi sebagian kecil (α << 1, memiliki Ka atau Kb). Reaksi bolak-balik (⇌). Contoh: CH₃COOH, HF, NH₃.'
+        aspect: 'Kepekatan (Pekat vs Encer)',
+        keyMetric: 'Konsentrasi Molaritas (M = mol/Liter)',
+        question: 'Berapa banyak zat yang dilarutkan ke dalam wadah?',
+        pekatDesc: 'Larutan Pekat: Jumlah molekul zat terlarut sangat banyak dan berdesak-desakan dalam sedikit pelarut (contoh: 2 M, 6 M, 12 M).',
+        encerDesc: 'Larutan Encer: Jumlah molekul zat terlarut sangat sedikit dan tersebar renggang di antara banyak molekul pelarut air (contoh: 0,01 M, 0,001 M).'
       },
       {
-        aspect: 'Kepekatan (Pekat vs Encer)',
-        detail: 'Ditentukan oleh KONSENTRASI ZAT TERLARUT (Molaritas / mol per liter), BUKAN kekuatannya!',
-        crucialDifference: 'PENTING: Asam lemah bisa saja pekat (misal CH₃COOH 10 M), dan asam kuat bisa saja sangat encer (misal HCl 0,0001 M). Kekuatan ≠ Kepekatan!'
+        aspect: 'Kekuatan (Kuat vs Lemah)',
+        keyMetric: 'Derajat Ionisasi (α) dan Ka / Kb',
+        question: 'Berapa persen zat yang berhasil pecah menjadi ion H⁺ atau OH⁻?',
+        strongDesc: 'Asam/Basa Kuat: Terurai 100% sempurna (α = 1). Reaksi searah (→). Contoh: HCl, HNO₃, H₂SO₄, NaOH, KOH.',
+        weakDesc: 'Asam/Basa Lemah: Terurai sebagian kecil saja (α << 1). Reaksi bolak-balik kesetimbangan (⇌). Contoh: CH₃COOH, HF, NH₃.'
+      }
+    ],
+    quadrants: [
+      {
+        category: 'Kuat & Pekat',
+        badge: '⚡💧 Kuat + Pekat',
+        example: 'HCl 12 M (Air Keras Industri)',
+        desc: 'Molekulnya sangat banyak di dalam air, dan 100% semuanya terurai menjadi ion H⁺ dan Cl⁻.',
+        effect: 'Sangat korosif, nilai pH < 0, reaksi sangat hebat.',
+        color: '#dc2626'
+      },
+      {
+        category: 'Kuat & Encer',
+        badge: '⚡🌊 Kuat + Encer',
+        example: 'HCl 0,0001 M (HCl Sangat Encer)',
+        desc: 'Hanya sedikit molekul HCl dalam air, namun seluruh molekul yang ada tersebut 100% terurai menjadi ion.',
+        effect: 'pH = 4,00. Sifat asamnya lembut dan tidak membakar kulit.',
+        color: '#f97316'
+      },
+      {
+        category: 'Lemah & Pekat',
+        badge: '🍃💧 Lemah + Pekat',
+        example: 'CH₃COOH 10 M (Cuka Biang / Asam Asetat Glasial)',
+        desc: 'Molekul asam asetat sangat padat dan banyak, tetapi hanya sekitar 0,1% yang terurai menjadi ion H⁺.',
+        effect: 'Baunya sangat menyengat dan dapat mengiritasi mata/kulit karena kepekatannya tinggi!',
+        color: '#eab308'
+      },
+      {
+        category: 'Lemah & Encer',
+        badge: '🍃🌊 Lemah + Encer',
+        example: 'CH₃COOH 0,001 M (Cuka Encer Dapur)',
+        desc: 'Molekulnya sedikit, dan yang terurai menjadi ion H⁺ pun hanya sebagian sangat kecil.',
+        effect: 'pH mendekati 3,87. Aman dikonsumsi dan rasanya masam ringan.',
+        color: '#10b981'
       }
     ]
   }

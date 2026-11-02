@@ -58,6 +58,25 @@ export const SOLUTIONS_DATA = {
       ratio: '1 : 1'
     }
   },
+  NH3: {
+    id: 'NH3',
+    name: 'Amonia',
+    formula: 'NH₃',
+    type: 'Basa Lemah',
+    category: 'base_weak',
+    reaction: 'NH₃ (aq) + H₂O (l) ⇌ NH₄⁺ (aq) + OH⁻ (aq)',
+    description: 'Terionisasi sebagian (α < 1, Kb = 1,8 × 10⁻⁵) dengan mengikat proton dari air menghasilkan sedikit ion OH⁻ dan NH₄⁺.',
+    defaultConc: 0.1,
+    minConc: 0.001,
+    maxConc: 1.0,
+    step: 0.005,
+    commonUse: 'Pembersih kaca rumah tangga, bahan baku pupuk urea, cairan pendingin.',
+    ions: {
+      positive: 'NH₄⁺',
+      negative: 'OH⁻',
+      ratio: 'sebagian kecil terurai'
+    }
+  },
   H2O: {
     id: 'H2O',
     name: 'Air Murni (Aquades)',

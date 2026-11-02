@@ -9,8 +9,8 @@ export default function Navbar({ currentStep, setStep, onReset }) {
             <span className="logo-icon">⚗️</span>
           </div>
           <div className="brand-text">
-            <span className="brand-title">AsamBasa <span className="brand-highlight">5E</span></span>
-            <span className="brand-subtitle">Kimia SMA Kelas XI</span>
+            <span className="brand-title">Chemify <span className="brand-highlight">5E</span></span>
+            <span className="brand-subtitle">Media Pembelajaran Asam-Basa</span>
           </div>
         </div>
 

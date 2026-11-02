@@ -230,6 +230,11 @@ export default function Explore({ onPrev, onNext, onExploreRecord }) {
                     Bandingkan CH₃COOH 0,1 M (pH ~2,87) dengan HCl 0,1 M (pH 1,00). Mengapa berbeda padahal konsentrasinya sama? Kita akan bahas di tahap Explain!
                   </li>
                 )}
+                {activeSolution.id === 'NH3' && (
+                  <li>
+                    Bandingkan NH₃ 0,1 M (pH ~11,13) dengan NaOH 0,1 M (pH 13,00). Amati bahwa amonia sebagai basa lemah hanya menghasilkan sedikit ion OH⁻ bebas!
+                  </li>
+                )}
               </ul>
             </div>
           </div>

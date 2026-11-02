@@ -91,6 +91,18 @@ export function calculateSolution(type, concentration) {
       categoryColor = '#3b82f6';
       break;
     }
+    case 'NH3': {
+      // Basa Lemah Monoprotik (Kb = 1.8 × 10⁻⁵)
+      const Kb = 1.8e-5;
+      OH_conc = Math.sqrt(Kb * c);
+      H_conc = Kw / OH_conc;
+      pOH = -Math.log10(OH_conc);
+      pH = 14 - pOH;
+      alpha = OH_conc / c;
+      nature = 'Basa Lemah';
+      categoryColor = '#06b6d4';
+      break;
+    }
     case 'H2O':
     default: {
       // Air Murni Netral
