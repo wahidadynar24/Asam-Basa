@@ -4,22 +4,39 @@ import NavigationButtons from '../components/NavigationButtons';
 
 export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswers, quizScore, setQuizScore }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+
   const currentQuestion = QUIZ_QUESTIONS[currentIndex];
 
-  const currentAnswer = quizAnswers[currentQuestion.id];
-  const isAnswered = currentAnswer !== undefined;
+  // Data jawaban yang sudah disimpan (submitted)
+  const submittedAnswer = quizAnswers[currentQuestion.id];
+  const answerSubmitted = submittedAnswer !== undefined;
 
-  // Handler memilih jawaban
+  // selectedAnswer = jawaban yang sedang dipilih siswa (atau jawaban tersimpan jika sudah disubmit)
+  const selectedAnswer = answerSubmitted
+    ? submittedAnswer.selected
+    : (selectedAnswers[currentQuestion.id] || null);
+
+  // Handler memilih jawaban sementara
   const handleSelectAnswer = (optionId) => {
-    if (isAnswered) return; // Mencegah ganti jawaban untuk evaluasi objektif
+    if (answerSubmitted) return; // Mencegah ganti jawaban jika sudah disimpan
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: optionId,
+    }));
+  };
 
-    const isCorrect = optionId === currentQuestion.correctAnswer;
+  // Handler tombol "Simpan Jawaban": simpan, evaluasi benar/salah, hitung skor
+  const handleSubmitAnswer = () => {
+    if (!selectedAnswer || answerSubmitted) return;
+
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
     const updatedAnswers = {
       ...quizAnswers,
       [currentQuestion.id]: {
-        selected: optionId,
-        isCorrect
-      }
+        selected: selectedAnswer,
+        isCorrect,
+      },
     };
     setQuizAnswers(updatedAnswers);
 
@@ -56,7 +73,7 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
         <span className="stage-pill pill-evaluate">Tahap 5: Evaluate (Evaluasi Belajar)</span>
         <h2 className="stage-title">Uji Pemahaman Konsep Asam-Basa</h2>
         <p className="stage-lead">
-          Jawablah 10 pertanyaan variatif di bawah ini. Umpan balik ilmiah langsung akan muncul begitu kamu memilih jawaban!
+          Jawablah 10 pertanyaan variatif di bawah ini. Pilih jawabanmu, klik "Simpan Jawaban", lalu simak umpan balik penjelasannya!
         </p>
       </div>
 
@@ -112,11 +129,11 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
         {/* Pilihan Jawaban */}
         <div className="options-list">
           {currentQuestion.options.map((opt) => {
-            const isSelected = currentAnswer?.selected === opt.id;
+            const isSelected = selectedAnswer === opt.id;
             const isThisCorrect = opt.id === currentQuestion.correctAnswer;
             
             let btnClass = 'quiz-opt-btn';
-            if (isAnswered) {
+            if (answerSubmitted) {
               if (isThisCorrect) {
                 btnClass += ' opt-correct';
               } else if (isSelected && !isThisCorrect) {
@@ -124,6 +141,8 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
               } else {
                 btnClass += ' opt-disabled';
               }
+            } else if (isSelected) {
+              btnClass += ' opt-selected';
             }
 
             return (
@@ -132,23 +151,35 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
                 type="button"
                 className={btnClass}
                 onClick={() => handleSelectAnswer(opt.id)}
-                disabled={isAnswered}
+                disabled={answerSubmitted}
               >
                 <span className="opt-key">{opt.id.toUpperCase()}</span>
                 <span className="opt-content">{opt.text}</span>
-                {isAnswered && isThisCorrect && <span className="opt-status-icon">✓</span>}
-                {isAnswered && isSelected && !isThisCorrect && <span className="opt-status-icon">✗</span>}
+                {answerSubmitted && isThisCorrect && <span className="opt-status-icon">✓</span>}
+                {answerSubmitted && isSelected && !isThisCorrect && <span className="opt-status-icon">✗</span>}
               </button>
             );
           })}
         </div>
 
-        {/* Feedback Umpan Balik Langsung */}
-        {isAnswered && (
-          <div className={`quiz-feedback-box ${currentAnswer.isCorrect ? 'fb-correct' : 'fb-wrong'} fade-in`}>
+        {/* Tombol Simpan Jawaban */}
+        <div className="quiz-action-row">
+          <button
+            type="button"
+            className={`btn-submit-quiz ${answerSubmitted ? 'saved' : ''}`}
+            onClick={handleSubmitAnswer}
+            disabled={!selectedAnswer || answerSubmitted}
+          >
+            {answerSubmitted ? '✓ Jawaban Tersimpan' : 'Simpan Jawaban'}
+          </button>
+        </div>
+
+        {/* Feedback Umpan Balik Setelah Jawaban Disimpan */}
+        {answerSubmitted && submittedAnswer && (
+          <div className={`quiz-feedback-box ${submittedAnswer.isCorrect ? 'fb-correct' : 'fb-wrong'} fade-in`}>
             <div className="fb-header">
-              <span className="fb-icon">{currentAnswer.isCorrect ? '🎉' : '💡'}</span>
-              <strong>{currentAnswer.isCorrect ? 'Jawaban Benar!' : 'Jawaban Kurang Tepat'}</strong>
+              <span className="fb-icon">{submittedAnswer.isCorrect ? '🎉' : '💡'}</span>
+              <strong>{submittedAnswer.isCorrect ? 'Jawaban Benar!' : 'Jawaban Kurang Tepat'}</strong>
             </div>
             <p className="fb-explanation">{currentQuestion.explanation}</p>
           </div>
