@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Navbar({ _currentStep, setStep, onReset, currentUser, onLogout }) {
+export default function Navbar({ _currentStep, setStep, onReset, currentUser, isCloudConnected = false, onLogout }) {
   // Ambil inisial nama pengguna untuk avatar
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -34,7 +34,15 @@ export default function Navbar({ _currentStep, setStep, onReset, currentUser, on
               </div>
               <div className="user-info-text">
                 <span className="user-name-display">{currentUser.name}</span>
-                <span className="user-role-tag">Siswa</span>
+                <div className="user-meta-tags">
+                  <span className="user-role-tag">Siswa</span>
+                  <span 
+                    className={`cloud-status-tag ${isCloudConnected ? 'connected' : 'offline'}`}
+                    title={isCloudConnected ? 'Tersinkron ke Firebase Cloud' : 'Mode Penyimpanan Lokal'}
+                  >
+                    {isCloudConnected ? '☁️ Cloud' : '💾 Lokal'}
+                  </span>
+                </div>
               </div>
             </div>
           )}

@@ -10,6 +10,8 @@ import Evaluate from './pages/Evaluate';
 import Results from './pages/Results';
 import Auth from './pages/Auth';
 import { getActiveSession, logoutUser } from './utils/auth';
+import { isFirebaseConfigured } from './services/firebase';
+import { saveStudentProgress, getStudentProgress } from './services/firestoreService';
 import './App.css';
 
 export default function App() {
@@ -79,6 +81,31 @@ export default function App() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Muat data kemajuan belajar siswa dari Cloud Firestore saat login / mount
+  useEffect(() => {
+    if (!currentUser?.id || !isFirebaseConfigured()) return;
+
+    let isMounted = true;
+    getStudentProgress(currentUser.id).then((res) => {
+      if (isMounted && res.success && res.data) {
+        const cloudData = res.data;
+        if (cloudData.currentStep !== undefined) setCurrentStep(cloudData.currentStep);
+        if (Array.isArray(cloudData.completedSteps)) setCompletedSteps(cloudData.completedSteps);
+        if (cloudData.userPrediction) setUserPrediction(cloudData.userPrediction);
+        if (cloudData.elaborateProgress) setElaborateProgress(cloudData.elaborateProgress);
+        if (cloudData.quizAnswers) setQuizAnswers(cloudData.quizAnswers);
+        if (cloudData.quizScore !== undefined) setQuizScore(cloudData.quizScore);
+        if (cloudData.studentReflection) {
+          localStorage.setItem('student_reflection', cloudData.studentReflection);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.id]);
+
   // Sinkronisasi modul pembelajaran ke localStorage setiap ada perubahan
   useEffect(() => {
     if (currentUser) {
@@ -116,6 +143,27 @@ export default function App() {
     }
   }, [quizScore, currentUser]);
 
+  // Sinkronisasi kemajuan belajar siswa ke Cloud Firestore (Debounced)
+  useEffect(() => {
+    if (!currentUser?.id || !isFirebaseConfigured()) return;
+
+    const syncTimeout = setTimeout(() => {
+      saveStudentProgress(currentUser.id, {
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        currentStep,
+        completedSteps,
+        userPrediction,
+        elaborateProgress,
+        quizAnswers,
+        quizScore,
+        studentReflection: localStorage.getItem('student_reflection') || ''
+      });
+    }, 1200);
+
+    return () => clearTimeout(syncTimeout);
+  }, [currentStep, completedSteps, userPrediction, elaborateProgress, quizAnswers, quizScore, currentUser]);
+
   // Handler Sukses Login
   const handleLoginSuccess = (userSession) => {
     setCurrentUser(userSession);
@@ -125,9 +173,9 @@ export default function App() {
   };
 
   // Handler Logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm(`Hai ${currentUser?.name || 'Siswa'}, apakah kamu yakin ingin keluar dari akun Chemify?`)) {
-      logoutUser();
+      await logoutUser();
       setCurrentUser(null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -163,6 +211,22 @@ export default function App() {
       setElaborateProgress({});
       setQuizAnswers({});
       setQuizScore(0);
+
+      // Sinkronkan reset ke Cloud Firestore jika aktif
+      if (currentUser?.id && isFirebaseConfigured()) {
+        saveStudentProgress(currentUser.id, {
+          userName: currentUser.name,
+          userEmail: currentUser.email,
+          currentStep: 0,
+          completedSteps: [],
+          userPrediction: { optionId: '', optionText: '', note: '' },
+          elaborateProgress: {},
+          quizAnswers: {},
+          quizScore: 0,
+          studentReflection: ''
+        });
+      }
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -185,6 +249,7 @@ export default function App() {
         setStep={goToStep} 
         onReset={handleReset}
         currentUser={currentUser}
+        isCloudConnected={isFirebaseConfigured()}
         onLogout={handleLogout}
       />
 
@@ -252,6 +317,7 @@ export default function App() {
             quizAnswers={quizAnswers}
             userPrediction={userPrediction}
             elaborateProgress={elaborateProgress}
+            currentUser={currentUser}
             onReset={handleReset}
           />
         )}

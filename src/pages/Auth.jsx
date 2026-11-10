@@ -7,6 +7,7 @@ import {
   validateEmailFormat, 
   validatePasswordStrength 
 } from '../utils/auth';
+import { isFirebaseConfigured } from '../services/firebase';
 
 export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'register'
@@ -164,23 +165,27 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
       setForgotStatus({ type: 'error', message: 'Format email tidak valid.' });
       return;
     }
-    if (!forgotNewPassword) {
-      setForgotStatus({ type: 'error', message: 'Password baru wajib diisi.' });
-      return;
-    }
-    const check = validatePasswordStrength(forgotNewPassword);
-    if (!check.isValid) {
-      setForgotStatus({ type: 'error', message: check.message });
-      return;
-    }
-    if (forgotNewPassword !== forgotConfirmPassword) {
-      setForgotStatus({ type: 'error', message: 'Konfirmasi password baru tidak cocok.' });
-      return;
+
+    // Jika mode lokal, validasi input password baru
+    if (!isFirebaseConfigured()) {
+      if (!forgotNewPassword) {
+        setForgotStatus({ type: 'error', message: 'Password baru wajib diisi.' });
+        return;
+      }
+      const check = validatePasswordStrength(forgotNewPassword);
+      if (!check.isValid) {
+        setForgotStatus({ type: 'error', message: check.message });
+        return;
+      }
+      if (forgotNewPassword !== forgotConfirmPassword) {
+        setForgotStatus({ type: 'error', message: 'Konfirmasi password baru tidak cocok.' });
+        return;
+      }
     }
 
     try {
       setIsForgotLoading(true);
-      await resetUserPassword({
+      const res = await resetUserPassword({
         email: forgotEmail,
         newPassword: forgotNewPassword,
         confirmPassword: forgotConfirmPassword
@@ -188,7 +193,7 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
 
       setForgotStatus({
         type: 'success',
-        message: 'Password berhasil diubah! Kamu sekarang dapat masuk dengan password baru.'
+        message: res.message || 'Permintaan pemulihan password berhasil diproses.'
       });
       setLoginEmail(forgotEmail);
       setTimeout(() => {
@@ -198,10 +203,9 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
         setForgotNewPassword('');
         setForgotConfirmPassword('');
         setMode('login');
-        setSuccessMessage('Password berhasil diperbarui. Silakan login dengan password baru.');
-      }, 1800);
+      }, 2500);
     } catch (err) {
-      setForgotStatus({ type: 'error', message: err.message || 'Gagal mengubah password.' });
+      setForgotStatus({ type: 'error', message: err.message || 'Gagal memproses pemulihan password.' });
     } finally {
       setIsForgotLoading(false);
     }
@@ -400,11 +404,18 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
                 )}
               </button>
 
-              {/* Demo Quick Credential Helper */}
-              <div className="demo-credentials-badge">
-                <span className="demo-badge-title">💡 Akun Demo Siap Pakai:</span>
-                <code>siswa@chemify.edu</code> / <code>Siswa123!</code>
-              </div>
+              {/* Demo Quick Credential Helper / Firebase Status */}
+              {isFirebaseConfigured() ? (
+                <div className="firebase-status-badge">
+                  <span className="firebase-badge-title">🔥 Firebase Cloud Aktif</span>
+                  <p className="firebase-badge-hint">Akun dan kemajuan belajar 5E kamu akan tersimpan aman di Firebase Cloud.</p>
+                </div>
+              ) : (
+                <div className="demo-credentials-badge">
+                  <span className="demo-badge-title">💡 Akun Demo Siap Pakai (Mode Offline):</span>
+                  <code>siswa@chemify.edu</code> / <code>Siswa123!</code>
+                </div>
+              )}
 
               {/* Tautan "Belum memiliki akun? Register" */}
               <div className="auth-footer-switch">
@@ -634,7 +645,9 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
             </div>
 
             <p className="modal-desc">
-              Masukkan alamat email akun Chemify yang telah terdaftar, kemudian tetapkan kata sandi baru kamu.
+              {isFirebaseConfigured()
+                ? 'Masukkan alamat email akun Chemify kamu. Tautan resmi untuk mengatur ulang kata sandi akan dikirimkan oleh Firebase ke email kamu.'
+                : 'Masukkan alamat email akun Chemify yang telah terdaftar, kemudian tetapkan kata sandi baru kamu.'}
             </p>
 
             {forgotStatus.message && (
@@ -658,41 +671,45 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="forgot-new-pwd">Kata Sandi Baru</label>
-                <div className="input-with-icon">
-                  <input
-                    id="forgot-new-pwd"
-                    type={showForgotNewPassword ? 'text' : 'password'}
-                    className="form-input"
-                    placeholder="Minimal 8 karakter (huruf & angka)"
-                    value={forgotNewPassword}
-                    onChange={(e) => setForgotNewPassword(e.target.value)}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="input-trailing-btn"
-                    onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
-                    aria-label="Tampilkan / Sembunyikan Password"
-                  >
-                    {showForgotNewPassword ? '🙈' : '👁️'}
-                  </button>
-                </div>
-              </div>
+              {!isFirebaseConfigured() && (
+                <>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="forgot-new-pwd">Kata Sandi Baru</label>
+                    <div className="input-with-icon">
+                      <input
+                        id="forgot-new-pwd"
+                        type={showForgotNewPassword ? 'text' : 'password'}
+                        className="form-input"
+                        placeholder="Minimal 8 karakter (huruf & angka)"
+                        value={forgotNewPassword}
+                        onChange={(e) => setForgotNewPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="input-trailing-btn"
+                        onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
+                        aria-label="Tampilkan / Sembunyikan Password"
+                      >
+                        {showForgotNewPassword ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="forgot-conf-pwd">Konfirmasi Kata Sandi Baru</label>
-                <input
-                  id="forgot-conf-pwd"
-                  type="password"
-                  className="form-input"
-                  placeholder="Ulangi kata sandi baru"
-                  value={forgotConfirmPassword}
-                  onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="forgot-conf-pwd">Konfirmasi Kata Sandi Baru</label>
+                    <input
+                      id="forgot-conf-pwd"
+                      type="password"
+                      className="form-input"
+                      placeholder="Ulangi kata sandi baru"
+                      value={forgotConfirmPassword}
+                      onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="modal-actions">
                 <button
@@ -707,7 +724,7 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
                   className="btn-modal-submit"
                   disabled={isForgotLoading}
                 >
-                  {isForgotLoading ? 'Memperbarui...' : 'Simpan Kata Sandi Baru'}
+                  {isForgotLoading ? 'Memproses...' : (isFirebaseConfigured() ? 'Kirim Tautan Reset Password' : 'Simpan Kata Sandi Baru')}
                 </button>
               </div>
             </form>
