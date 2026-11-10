@@ -9,6 +9,7 @@ import Elaborate from './pages/Elaborate';
 import Evaluate from './pages/Evaluate';
 import Results from './pages/Results';
 import Auth from './pages/Auth';
+import Profile from './pages/Profile';
 import { getActiveSession, logoutUser } from './utils/auth';
 import './App.css';
 
@@ -17,6 +18,9 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     return getActiveSession();
   });
+
+  // Tampilan Halaman Profil Pengguna vs Dashboard Pembelajaran
+  const [isProfileView, setIsProfileView] = useState(false);
 
   // 1. Current Step: 0 = Home, 1 = Engage, 2 = Explore, 3 = Explain, 4 = Elaborate, 5 = Evaluate, 6 = Results
   const [currentStep, setCurrentStep] = useState(() => {
@@ -119,6 +123,7 @@ export default function App() {
   // Handler Sukses Login
   const handleLoginSuccess = (userSession) => {
     setCurrentUser(userSession);
+    setIsProfileView(false);
     // Langsung arahkan pengguna ke Dashboard CHEMIFY
     setCurrentStep(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -129,12 +134,14 @@ export default function App() {
     if (window.confirm(`Hai ${currentUser?.name || 'Siswa'}, apakah kamu yakin ingin keluar dari akun Chemify?`)) {
       logoutUser();
       setCurrentUser(null);
+      setIsProfileView(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   // Scroll ke atas saat berpindah tahap
   const goToStep = (step) => {
+    setIsProfileView(false);
     setCurrentStep(step);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -163,8 +170,24 @@ export default function App() {
       setElaborateProgress({});
       setQuizAnswers({});
       setQuizScore(0);
+      setIsProfileView(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  // Buka Halaman Profil Pengguna
+  const handleOpenProfile = () => {
+    setIsProfileView(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Update data pengguna lokal saat profil berhasil disimpan
+  const handleProfileUpdated = (updatedUser) => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      name: updatedUser.name,
+      photoUrl: updatedUser.photoUrl
+    }));
   };
 
   // PROTEKSI DASHBOARD: Jika belum terautentikasi, tampilkan halaman Login & Registrasi
@@ -176,86 +199,104 @@ export default function App() {
     );
   }
 
-  // JIKA SUDAH LOGIN: Tampilkan Dashboard CHEMIFY & Alur Pembelajaran 5E
+  // JIKA SUDAH LOGIN: Tampilkan Dashboard CHEMIFY & Alur Pembelajaran 5E / Profil
   return (
     <div className="app-layout">
-      {/* Navbar Atas dengan info Profil Pengguna & Tombol Logout */}
+      {/* Navbar Atas dengan info Profil Pengguna, Ikon Profil, & Tombol Logout */}
       <Navbar 
-        currentStep={currentStep} 
+        _currentStep={currentStep} 
         setStep={goToStep} 
         onReset={handleReset}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onOpenProfile={handleOpenProfile}
+        isProfileActive={isProfileView}
       />
 
-      {/* Stepper Progress Bar 5E */}
-      <ProgressBar 
-        currentStep={currentStep} 
-        setStep={goToStep} 
-        completedSteps={completedSteps} 
-      />
-
-      {/* Halaman Pembelajaran Sesuai Step */}
-      <main className="main-content">
-        {currentStep === 0 && (
-          <Home 
-            onStart={() => goToStep(1)} 
-          />
-        )}
-
-        {currentStep === 1 && (
-          <Engage
-            onPrev={() => goToStep(0)}
-            onNext={() => markCompletedAndNext(1, 2)}
-            userPrediction={userPrediction}
-            setUserPrediction={setUserPrediction}
-          />
-        )}
-
-        {currentStep === 2 && (
-          <Explore
-            onPrev={() => goToStep(1)}
-            onNext={() => markCompletedAndNext(2, 3)}
-          />
-        )}
-
-        {currentStep === 3 && (
-          <Explain
-            onPrev={() => goToStep(2)}
-            onNext={() => markCompletedAndNext(3, 4)}
-          />
-        )}
-
-        {currentStep === 4 && (
-          <Elaborate
-            onPrev={() => goToStep(3)}
-            onNext={() => markCompletedAndNext(4, 5)}
-            elaborateProgress={elaborateProgress}
-            setElaborateProgress={setElaborateProgress}
-          />
-        )}
-
-        {currentStep === 5 && (
-          <Evaluate
-            onPrev={() => goToStep(4)}
-            onComplete={() => markCompletedAndNext(5, 6)}
-            quizAnswers={quizAnswers}
-            setQuizAnswers={setQuizAnswers}
+      {/* Konten Halaman: Menampilkan Profil Pengguna ATAU Modul Pembelajaran 5E */}
+      {isProfileView ? (
+        <main className="main-content">
+          <Profile 
+            key={currentUser.id}
+            currentUser={currentUser}
+            onBack={() => goToStep(currentStep)}
+            onProfileUpdated={handleProfileUpdated}
             quizScore={quizScore}
-            setQuizScore={setQuizScore}
+            completedSteps={completedSteps}
           />
-        )}
+        </main>
+      ) : (
+        <>
+          {/* Stepper Progress Bar 5E */}
+          <ProgressBar 
+            currentStep={currentStep} 
+            setStep={goToStep} 
+            completedSteps={completedSteps} 
+          />
 
-        {currentStep === 6 && (
-          <Results
-            quizScore={quizScore}
-            quizAnswers={quizAnswers}
-            userPrediction={userPrediction}
-            elaborateProgress={elaborateProgress}
-            onReset={handleReset}
-          />
-        )}
-      </main>
+          {/* Halaman Pembelajaran Sesuai Step */}
+          <main className="main-content">
+            {currentStep === 0 && (
+              <Home 
+                onStart={() => goToStep(1)} 
+              />
+            )}
+
+            {currentStep === 1 && (
+              <Engage
+                onPrev={() => goToStep(0)}
+                onNext={() => markCompletedAndNext(1, 2)}
+                userPrediction={userPrediction}
+                setUserPrediction={setUserPrediction}
+              />
+            )}
+
+            {currentStep === 2 && (
+              <Explore
+                onPrev={() => goToStep(1)}
+                onNext={() => markCompletedAndNext(2, 3)}
+              />
+            )}
+
+            {currentStep === 3 && (
+              <Explain
+                onPrev={() => goToStep(2)}
+                onNext={() => markCompletedAndNext(3, 4)}
+              />
+            )}
+
+            {currentStep === 4 && (
+              <Elaborate
+                onPrev={() => goToStep(3)}
+                onNext={() => markCompletedAndNext(4, 5)}
+                elaborateProgress={elaborateProgress}
+                setElaborateProgress={setElaborateProgress}
+              />
+            )}
+
+            {currentStep === 5 && (
+              <Evaluate
+                onPrev={() => goToStep(4)}
+                onComplete={() => markCompletedAndNext(5, 6)}
+                quizAnswers={quizAnswers}
+                setQuizAnswers={setQuizAnswers}
+                quizScore={quizScore}
+                setQuizScore={setQuizScore}
+              />
+            )}
+
+            {currentStep === 6 && (
+              <Results
+                quizScore={quizScore}
+                quizAnswers={quizAnswers}
+                userPrediction={userPrediction}
+                elaborateProgress={elaborateProgress}
+                onReset={handleReset}
+              />
+            )}
+          </main>
+        </>
+      )}
 
       {/* Footer Aplikasi */}
       <footer className="app-footer">

@@ -88,6 +88,13 @@ export async function initDefaultDemoUser() {
       email: 'siswa@chemify.edu',
       salt: defaultSalt,
       passwordHash: defaultHash,
+      school: 'SMA Negeri 1 Edukasi',
+      educationLevel: 'SMA',
+      grade: 'XI',
+      major: 'MIPA (Matematika & IPA)',
+      attendanceNumber: '01',
+      bio: 'Siswa antusias kimia yang sedang mempelajari modul asam-basa 5E.',
+      photoUrl: '',
       createdAt: new Date().toISOString()
     };
     saveUsers([demoUser]);
@@ -227,6 +234,7 @@ export async function loginUser({ email, password, rememberMe = false }) {
     id: user.id,
     name: user.name,
     email: user.email,
+    photoUrl: user.photoUrl || '',
     loggedInAt: new Date().toISOString(),
     rememberMe: Boolean(rememberMe)
   };
@@ -324,5 +332,97 @@ export async function resetUserPassword({ email, newPassword, confirmPassword })
   saveUsers(users);
 
   return { success: true, message: 'Password berhasil diperbarui. Silakan masuk kembali.' };
+}
+
+/**
+ * Mengambil profil lengkap pengguna berdasarkan ID
+ * @param {string} userId 
+ */
+export function getUserProfile(userId) {
+  if (!userId) return null;
+  const users = getRegisteredUsers();
+  const user = users.find(u => u.id === userId);
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    name: user.name || '',
+    email: user.email || '',
+    photoUrl: user.photoUrl || '',
+    school: user.school || '',
+    educationLevel: user.educationLevel || 'SMA',
+    grade: user.grade || 'XI',
+    major: user.major || 'MIPA (Matematika & IPA)',
+    attendanceNumber: user.attendanceNumber || '',
+    bio: user.bio || '',
+    createdAt: user.createdAt || ''
+  };
+}
+
+/**
+ * Memperbarui profil pengguna
+ * @param {string} userId 
+ * @param {object} profileData 
+ */
+export function updateUserProfile(userId, profileData) {
+  if (!userId) {
+    throw new Error('ID pengguna tidak valid.');
+  }
+
+  const trimmedName = (profileData.name || '').trim();
+  const trimmedSchool = (profileData.school || '').trim();
+  const trimmedMajor = (profileData.major || '').trim();
+
+  // Validasi kolom wajib diisi
+  if (!trimmedName) {
+    throw new Error('Nama Lengkap wajib diisi.');
+  }
+  if (!trimmedSchool) {
+    throw new Error('Nama Sekolah wajib diisi.');
+  }
+  if (!profileData.educationLevel) {
+    throw new Error('Jenjang Pendidikan wajib dipilih.');
+  }
+  if (!profileData.grade) {
+    throw new Error('Kelas wajib dipilih.');
+  }
+  if (!trimmedMajor) {
+    throw new Error('Jurusan wajib diisi.');
+  }
+
+  const users = getRegisteredUsers();
+  const index = users.findIndex(u => u.id === userId);
+  if (index === -1) {
+    throw new Error('Data pengguna tidak ditemukan dalam sistem.');
+  }
+
+  const updatedUser = {
+    ...users[index],
+    name: trimmedName,
+    photoUrl: profileData.photoUrl !== undefined ? profileData.photoUrl : (users[index].photoUrl || ''),
+    school: trimmedSchool,
+    educationLevel: profileData.educationLevel,
+    grade: profileData.grade,
+    major: trimmedMajor,
+    attendanceNumber: (profileData.attendanceNumber || '').trim(),
+    bio: (profileData.bio || '').trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  users[index] = updatedUser;
+  saveUsers(users);
+
+  // Perbarui juga sesi aktif jika pengguna yang diupdate adalah sesi yang sedang berjalan
+  const activeSession = getActiveSession();
+  if (activeSession && activeSession.id === userId) {
+    const updatedSession = {
+      ...activeSession,
+      name: updatedUser.name,
+      photoUrl: updatedUser.photoUrl
+    };
+    saveSession(updatedSession, activeSession.rememberMe);
+  }
+
+  return getUserProfile(userId);
 }
 
