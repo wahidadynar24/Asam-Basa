@@ -5147,3 +5147,919 @@
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   PORTAL SWITCHER BANNER (FLOATING ON STUDENT AUTH)
+   ========================================================================== */
+
+.portal-switcher-top-banner {
+  position: absolute;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1.25rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  font-size: 0.85rem;
+  animation: fadeInDown 0.4s ease;
+}
+
+.portal-banner-icon {
+  font-size: 1.15rem;
+}
+
+.portal-banner-text {
+  font-weight: 600;
+  color: #334155;
+}
+
+.portal-banner-btn {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 0.3rem 0.85rem;
+  border-radius: var(--radius-full);
+  border: 1px solid #bae6fd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.portal-banner-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .portal-switcher-top-banner {
+    position: static;
+    transform: none;
+    margin: 1rem auto 0;
+    width: 90%;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.4rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* ==========================================================================
+   TEACHER AUTHENTICATION PAGE STYLES (/guru/login, /guru/register)
+   ========================================================================== */
+
+.teacher-auth-page-wrapper {
+  background: radial-gradient(circle at 10% 20%, rgba(5, 150, 105, 0.08) 0%, rgba(248, 250, 252, 1) 90%);
+}
+
+.shape-teacher {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.15), rgba(14, 165, 233, 0.1)) !important;
+}
+
+.teacher-logo-badge {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.28) !important;
+}
+
+.portal-badge-indicator {
+  margin: 0.35rem 0 0.5rem;
+}
+
+.portal-pill-teacher {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: #d1fae5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.teacher-auth-card {
+  border-top: 4px solid #059669;
+}
+
+.active-teacher {
+  color: #047857 !important;
+  border-bottom-color: #059669 !important;
+}
+
+.btn-teacher-primary {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+}
+
+.btn-teacher-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857, #065f46) !important;
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.42) !important;
+}
+
+.teacher-demo-badge {
+  background: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+  color: #166534 !important;
+}
+
+.teacher-demo-badge code {
+  color: #15803d !important;
+  background: #ffffff !important;
+}
+
+.teacher-auth-links-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.btn-text-link-return {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-text-link-return:hover {
+  color: #059669;
+  background: #f1f5f9;
+}
+
+.text-teacher-accent {
+  color: #059669 !important;
+}
+
+.text-teacher-accent:hover {
+  color: #047857 !important;
+}
+
+.teacher-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .teacher-form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.teacher-security-notice {
+  background: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+  color: #166534 !important;
+}
+
+/* ==========================================================================
+   TEACHER NAVBAR & HEADER
+   ========================================================================== */
+
+.teacher-navbar {
+  border-bottom: 2px solid #a7f3d0;
+  background: #ffffff;
+}
+
+.teacher-brand-logo {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+}
+
+.brand-highlight-teacher {
+  color: #059669 !important;
+}
+
+.teacher-nav-links-center {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 2rem;
+}
+
+.teacher-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.teacher-nav-link:hover {
+  background: #f0fdf4;
+  color: #047857;
+}
+
+.teacher-nav-link.active {
+  background: #d1fae5;
+  color: #047857;
+  font-weight: 700;
+}
+
+.teacher-avatar-badge {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+}
+
+.teacher-role-tag {
+  color: #059669 !important;
+}
+
+.teacher-profile-btn.active-teacher {
+  background: #d1fae5 !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2) !important;
+}
+
+.teacher-btn-logout:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: #f87171 !important;
+}
+
+@media (max-width: 768px) {
+  .teacher-nav-links-center {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   TEACHER PROFILE PAGE (/guru/profil)
+   ========================================================================== */
+
+.teacher-profile-page {
+  animation: fadeIn 0.3s ease;
+}
+
+.teacher-profile-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-back-teacher:hover {
+  color: #059669 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.teacher-quick-nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.teacher-nav-pill {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.teacher-nav-pill:hover {
+  background: #f0fdf4;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.teacher-nav-pill.active {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+  font-weight: 700;
+}
+
+.teacher-nav-pill-logout {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.teacher-nav-pill-logout:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #f87171;
+}
+
+.teacher-hero-card::before {
+  background: linear-gradient(90deg, #059669, #0d9488, #0284c7) !important;
+}
+
+.teacher-large-avatar-placeholder {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+}
+
+.profile-badge-teacher {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  background: #d1fae5;
+  color: #047857;
+  border-radius: var(--radius-full);
+  border: 1px solid #a7f3d0;
+  letter-spacing: 0.04em;
+}
+
+.btn-teacher-edit {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3) !important;
+}
+
+.btn-teacher-edit:hover {
+  background: linear-gradient(135deg, #047857, #065f46) !important;
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4) !important;
+}
+
+.btn-teacher-save {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35) !important;
+}
+
+.btn-teacher-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857, #065f46) !important;
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.42) !important;
+}
+
+.text-teacher-bold {
+  color: #047857 !important;
+  font-weight: 700;
+}
+
+.text-teacher-subject-pill {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.text-success-bold {
+  color: #059669 !important;
+  font-weight: 700;
+}
+
+.role-tag-teacher {
+  background: #d1fae5;
+  color: #047857;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid #a7f3d0;
+}
+
+.teacher-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.teacher-nav-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-teacher-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.btn-teacher-nav-item:hover {
+  background: #f0fdf4;
+  border-color: #a7f3d0;
+  transform: translateX(3px);
+}
+
+.nav-item-icon {
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.nav-item-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-item-text strong {
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.nav-item-text span {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+}
+
+.nav-item-arrow {
+  font-size: 1.1rem;
+  color: #94a3b8;
+}
+
+.btn-teacher-nav-logout:hover {
+  background: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+}
+
+.btn-teacher-nav-logout .nav-item-arrow {
+  color: #dc2626 !important;
+}
+
+/* ==========================================================================
+   TEACHER DASHBOARD PAGE (/guru, /guru/dashboard)
+   ========================================================================== */
+
+.teacher-dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.teacher-welcome-banner {
+  background: linear-gradient(135deg, #065f46 0%, #047857 50%, #0d9488 100%);
+  color: #ffffff;
+  border-radius: var(--radius-xl);
+  padding: 2.25rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  box-shadow: 0 10px 25px rgba(5, 150, 105, 0.22);
+}
+
+.welcome-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.welcome-icon-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.welcome-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.welcome-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.75rem;
+  border-radius: var(--radius-full);
+  align-self: flex-start;
+}
+
+.welcome-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.welcome-subtitle {
+  font-size: 0.95rem;
+  opacity: 0.92;
+  max-width: 650px;
+  line-height: 1.5;
+}
+
+.welcome-banner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.btn-welcome-action {
+  padding: 0.7rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-welcome-action.primary {
+  background: #ffffff;
+  color: #065f46;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.btn-welcome-action.primary:hover {
+  background: #f0fdf4;
+  transform: translateY(-1px);
+}
+
+.btn-welcome-action.secondary {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.btn-welcome-action.secondary:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+@media (max-width: 860px) {
+  .teacher-welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.75rem 1.5rem;
+  }
+
+  .welcome-banner-actions {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .btn-welcome-action {
+    flex: 1;
+  }
+}
+
+/* Stats Overview Grid */
+.teacher-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+  flex-shrink: 0;
+}
+
+.stat-icon-students {
+  background: #e0f2fe;
+}
+
+.stat-icon-module {
+  background: #fef3c7;
+}
+
+.stat-icon-subject {
+  background: #ede9fe;
+}
+
+.stat-icon-status {
+  background: #d1fae5;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .teacher-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .teacher-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Teacher Dashboard Layout */
+.teacher-dashboard-layout {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 1.5rem;
+}
+
+.header-text-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.student-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #d1fae5;
+  color: #047857;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.card-intro-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.teacher-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.teacher-data-table th {
+  background: #f8fafc;
+  padding: 0.75rem 0.85rem;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 2px solid var(--border-color);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.teacher-data-table td {
+  padding: 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.teacher-data-table tr:hover td {
+  background: #f8fafc;
+}
+
+.student-table-name {
+  color: #0f172a;
+}
+
+.text-muted-cell {
+  color: #64748b;
+  font-size: 0.825rem;
+}
+
+.student-grade-pill {
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  color: #334155;
+}
+
+.role-tag-student {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+}
+
+.empty-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  opacity: 0.6;
+}
+
+/* Teacher Dashboard Sidebar */
+.teacher-dashboard-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.curriculum-steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.curriculum-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 1px solid #f1f5f9;
+}
+
+.step-badge-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #059669;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.curriculum-step-item strong {
+  font-size: 0.85rem;
+  color: #0f172a;
+}
+
+.curriculum-step-item p {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+  line-height: 1.4;
+}
+
+.quick-action-buttons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.btn-shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.btn-shortcut-item:hover {
+  background: #f0fdf4;
+  border-color: #a7f3d0;
+  color: #047857;
+  transform: translateX(2px);
+}
+
+.btn-shortcut-item .arrow-icon {
+  font-size: 1rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .teacher-dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   TEACHER PREVIEW STUDENT MODULE MODE
+   ========================================================================== */
+
+.teacher-preview-banner {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 0.65rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+  border-bottom: 2px solid #059669;
+  z-index: 100;
+  flex-wrap: wrap;
+}
+
+.preview-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.preview-badge {
+  background: #059669;
+  color: #ffffff;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.btn-exit-preview {
+  padding: 0.35rem 0.85rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-exit-preview:hover {
+  background: #ffffff;
+  color: #0f172a;
+}
+

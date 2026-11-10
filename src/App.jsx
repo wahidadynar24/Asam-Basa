@@ -10,6 +10,10 @@ import Evaluate from './pages/Evaluate';
 import Results from './pages/Results';
 import Auth from './pages/Auth';
 import Profile from './pages/Profile';
+import TeacherAuth from './pages/TeacherAuth';
+import TeacherProfile from './pages/TeacherProfile';
+import TeacherDashboard from './pages/TeacherDashboard';
+import TeacherNavbar from './components/TeacherNavbar';
 import { getActiveSession, logoutUser } from './utils/auth';
 import './App.css';
 
@@ -19,8 +23,16 @@ export default function App() {
     return getActiveSession();
   });
 
-  // Tampilan Halaman Profil Pengguna vs Dashboard Pembelajaran
+  // Routing berbasis browser path: '/', '/guru/login', '/guru/profil', '/guru/dashboard'
+  const [currentPath, setCurrentPath] = useState(() => {
+    return window.location.pathname.toLowerCase() || '/';
+  });
+
+  // Tampilan Halaman Profil Pengguna vs Dashboard Pembelajaran (Khusus Siswa)
   const [isProfileView, setIsProfileView] = useState(false);
+
+  // Status mode pratinjau modul siswa bagi guru
+  const [isTeacherPreviewingStudent, setIsTeacherPreviewingStudent] = useState(false);
 
   // 1. Current Step: 0 = Home, 1 = Engage, 2 = Explore, 3 = Explain, 4 = Elaborate, 5 = Evaluate, 6 = Results
   const [currentStep, setCurrentStep] = useState(() => {
@@ -73,6 +85,24 @@ export default function App() {
     return saved !== null ? parseInt(saved, 10) : 0;
   });
 
+  // Helper Navigasi URL Browser
+  const navigate = (path) => {
+    if (window.location.pathname.toLowerCase() !== path.toLowerCase()) {
+      window.history.pushState(null, '', path);
+    }
+    setCurrentPath(path.toLowerCase());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Sinkronisasi navigasi tombol Back/Forward browser
+  useEffect(() => {
+    const onPopState = () => {
+      setCurrentPath(window.location.pathname.toLowerCase() || '/');
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   // Sinkronisasi status autentikasi berkala jika tab lain logout
   useEffect(() => {
     const handleStorageChange = () => {
@@ -83,63 +113,101 @@ export default function App() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Sinkronisasi modul pembelajaran ke localStorage setiap ada perubahan
+  // ROLE-BASED ACCESS CONTROL (RBAC) GUARDS:
+  const isTeacher = currentUser?.role === 'teacher';
+  const isStudent = currentUser && !isTeacher;
+  const isTeacherRoute = currentPath.startsWith('/guru');
+
+  // Guard: Cegah siswa mengakses halaman profil guru atau rute khusus guru
   useEffect(() => {
-    if (currentUser) {
+    if (isStudent && isTeacherRoute) {
+      alert('Akses Ditolak: Halaman ini khusus diperuntukkan bagi akun Guru/Pendidik.');
+      setTimeout(() => {
+        navigate('/');
+      }, 0);
+    }
+  }, [isStudent, isTeacherRoute]);
+
+  // Sinkronisasi modul pembelajaran ke localStorage setiap ada perubahan (Khusus Siswa)
+  useEffect(() => {
+    if (currentUser && !isTeacher) {
       localStorage.setItem('chem_current_step', currentStep.toString());
     }
-  }, [currentStep, currentUser]);
+  }, [currentStep, currentUser, isTeacher]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isTeacher) {
       localStorage.setItem('chem_completed_steps', JSON.stringify(completedSteps));
     }
-  }, [completedSteps, currentUser]);
+  }, [completedSteps, currentUser, isTeacher]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isTeacher) {
       localStorage.setItem('chem_user_prediction', JSON.stringify(userPrediction));
     }
-  }, [userPrediction, currentUser]);
+  }, [userPrediction, currentUser, isTeacher]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isTeacher) {
       localStorage.setItem('chem_elaborate_progress', JSON.stringify(elaborateProgress));
     }
-  }, [elaborateProgress, currentUser]);
+  }, [elaborateProgress, currentUser, isTeacher]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isTeacher) {
       localStorage.setItem('chem_quiz_answers', JSON.stringify(quizAnswers));
     }
-  }, [quizAnswers, currentUser]);
+  }, [quizAnswers, currentUser, isTeacher]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isTeacher) {
       localStorage.setItem('chem_quiz_score', quizScore.toString());
     }
-  }, [quizScore, currentUser]);
+  }, [quizScore, currentUser, isTeacher]);
 
-  // Handler Sukses Login
+  // Handler Sukses Login Siswa
   const handleLoginSuccess = (userSession) => {
     setCurrentUser(userSession);
     setIsProfileView(false);
-    // Langsung arahkan pengguna ke Dashboard CHEMIFY
+    if (userSession.role === 'teacher') {
+      navigate('/guru/profil');
+      return;
+    }
     setCurrentStep(0);
+    navigate('/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handler Logout
+  // Handler Sukses Login Guru
+  const handleTeacherLoginSuccess = (teacherSession) => {
+    setCurrentUser(teacherSession);
+    navigate('/guru/profil');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handler Logout Siswa
   const handleLogout = () => {
     if (window.confirm(`Hai ${currentUser?.name || 'Siswa'}, apakah kamu yakin ingin keluar dari akun Chemify?`)) {
       logoutUser();
       setCurrentUser(null);
       setIsProfileView(false);
+      navigate('/');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  // Scroll ke atas saat berpindah tahap
+  // Handler Logout Guru
+  const handleTeacherLogout = () => {
+    if (window.confirm(`Bapak/Ibu ${currentUser?.name || 'Guru'}, apakah Anda yakin ingin keluar dari akun Chemify?`)) {
+      logoutUser();
+      setCurrentUser(null);
+      setIsTeacherPreviewingStudent(false);
+      navigate('/guru/login');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Scroll ke atas saat berpindah tahap belajar
   const goToStep = (step) => {
     setIsProfileView(false);
     setCurrentStep(step);
@@ -153,7 +221,7 @@ export default function App() {
     goToStep(nextStep);
   };
 
-  // Reset progress modul pembelajaran
+  // Reset progress modul pembelajaran siswa
   const handleReset = () => {
     if (window.confirm('Apakah kamu yakin ingin mengulang seluruh modul pembelajaran dari awal? Progress kuis dan simulasi akan direset.')) {
       localStorage.removeItem('chem_current_step');
@@ -175,13 +243,13 @@ export default function App() {
     }
   };
 
-  // Buka Halaman Profil Pengguna
+  // Buka Halaman Profil Pengguna Siswa
   const handleOpenProfile = () => {
     setIsProfileView(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Update data pengguna lokal saat profil berhasil disimpan
+  // Update data pengguna lokal saat profil siswa berhasil disimpan
   const handleProfileUpdated = (updatedUser) => {
     setCurrentUser((prev) => ({
       ...prev,
@@ -190,19 +258,193 @@ export default function App() {
     }));
   };
 
-  // PROTEKSI DASHBOARD: Jika belum terautentikasi, tampilkan halaman Login & Registrasi
+  // Update data pengguna lokal saat profil guru berhasil disimpan
+  const handleTeacherProfileUpdated = (updatedTeacher) => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      name: updatedTeacher.name,
+      photoUrl: updatedTeacher.photoUrl,
+      school: updatedTeacher.school,
+      subject: updatedTeacher.subject
+    }));
+  };
+
+  // =========================================================================
+  // KASUS 1: BELUM TERAUTENTIKASI (UNAUTHENTICATED)
+  // =========================================================================
   if (!currentUser) {
+    // Jika mengakses URL portal guru: /guru/login atau /guru/register atau /guru/profil
+    if (isTeacherRoute) {
+      return (
+        <div className="app-layout auth-layout">
+          <TeacherAuth 
+            key={currentPath.includes('register') ? 'register' : 'login'}
+            onLoginSuccess={handleTeacherLoginSuccess} 
+            onNavigate={navigate}
+            initialMode={currentPath.includes('register') ? 'register' : 'login'}
+          />
+        </div>
+      );
+    }
+
+    // Jika mengakses halaman utama: Tampilkan Auth siswa (unmodified) + Switcher Banner
     return (
       <div className="app-layout auth-layout">
+        {/* Floating Switcher Link ke Portal Guru tanpa mengubah komponen Auth.jsx */}
+        <div className="portal-switcher-top-banner">
+          <span className="portal-banner-icon">👨‍🏫</span>
+          <span className="portal-banner-text">Apakah Anda seorang Pendidik atau Guru Kimia?</span>
+          <button 
+            type="button" 
+            className="portal-banner-btn" 
+            onClick={() => navigate('/guru/login')}
+          >
+            Masuk Portal Guru di Sini →
+          </button>
+        </div>
+
         <Auth onLoginSuccess={handleLoginSuccess} />
       </div>
     );
   }
 
-  // JIKA SUDAH LOGIN: Tampilkan Dashboard CHEMIFY & Alur Pembelajaran 5E / Profil
+  // =========================================================================
+  // KASUS 2: PENGGUNA TERAUTENTIKASI SEBAGAI GURU (TEACHER)
+  // =========================================================================
+  if (isTeacher) {
+    // Jika Guru sedang mengaktifkan mode pratinjau modul pembelajaran siswa 5E
+    if (isTeacherPreviewingStudent) {
+      return (
+        <div className="app-layout teacher-preview-layout">
+          {/* Banner Peringatan Mode Pratinjau Guru */}
+          <div className="teacher-preview-banner">
+            <div className="preview-banner-text">
+              <span className="preview-badge">MODE PRATINJAU GURU</span>
+              <span>Anda sedang meninjau materi dan kuis modul siswa secara langsung.</span>
+            </div>
+            <button 
+              type="button" 
+              className="btn-exit-preview"
+              onClick={() => setIsTeacherPreviewingStudent(false)}
+            >
+              ← Kembali ke Dashboard Guru
+            </button>
+          </div>
+
+          <Navbar 
+            _currentStep={currentStep} 
+            setStep={goToStep} 
+            onReset={handleReset}
+            currentUser={currentUser}
+            onLogout={handleTeacherLogout}
+            onOpenProfile={() => {
+              setIsTeacherPreviewingStudent(false);
+              navigate('/guru/profil');
+            }}
+            isProfileActive={false}
+          />
+
+          <ProgressBar 
+            currentStep={currentStep} 
+            setStep={goToStep} 
+            completedSteps={completedSteps} 
+          />
+
+          <main className="main-content">
+            {currentStep === 0 && <Home onStart={() => goToStep(1)} />}
+            {currentStep === 1 && (
+              <Engage
+                onPrev={() => goToStep(0)}
+                onNext={() => markCompletedAndNext(1, 2)}
+                userPrediction={userPrediction}
+                setUserPrediction={setUserPrediction}
+              />
+            )}
+            {currentStep === 2 && (
+              <Explore onPrev={() => goToStep(1)} onNext={() => markCompletedAndNext(2, 3)} />
+            )}
+            {currentStep === 3 && (
+              <Explain onPrev={() => goToStep(2)} onNext={() => markCompletedAndNext(3, 4)} />
+            )}
+            {currentStep === 4 && (
+              <Elaborate
+                onPrev={() => goToStep(3)}
+                onNext={() => markCompletedAndNext(4, 5)}
+                elaborateProgress={elaborateProgress}
+                setElaborateProgress={setElaborateProgress}
+              />
+            )}
+            {currentStep === 5 && (
+              <Evaluate
+                onPrev={() => goToStep(4)}
+                onComplete={() => markCompletedAndNext(5, 6)}
+                quizAnswers={quizAnswers}
+                setQuizAnswers={setQuizAnswers}
+                quizScore={quizScore}
+                setQuizScore={setQuizScore}
+              />
+            )}
+            {currentStep === 6 && (
+              <Results
+                quizScore={quizScore}
+                quizAnswers={quizAnswers}
+                userPrediction={userPrediction}
+                elaborateProgress={elaborateProgress}
+                onReset={handleReset}
+              />
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    // Tampilan Standar Guru: Halaman Profil Guru ATAU Dashboard Guru
+    return (
+      <div className="app-layout teacher-layout">
+        {/* Navbar Khusus Guru */}
+        <TeacherNavbar 
+          currentUser={currentUser} 
+          currentPath={currentPath}
+          onNavigate={navigate}
+          onLogout={handleTeacherLogout}
+        />
+
+        <main className="main-content teacher-main-content">
+          {currentPath === '/guru/profil' ? (
+            <TeacherProfile 
+              key={currentUser.id}
+              currentUser={currentUser}
+              onNavigate={navigate}
+              onProfileUpdated={handleTeacherProfileUpdated}
+              onLogout={handleTeacherLogout}
+            />
+          ) : (
+            <TeacherDashboard 
+              key={currentUser.id}
+              currentUser={currentUser}
+              onNavigate={navigate}
+              onPreviewStudentModule={() => setIsTeacherPreviewingStudent(true)}
+            />
+          )}
+        </main>
+
+        <footer className="app-footer teacher-footer">
+          <div className="footer-content">
+            <p>© <strong>Chemify 5E</strong> — Portal Manajemen & Pembelajaran Guru Kimia (SMA Kelas XI)</p>
+            <span className="footer-subtext">Mendukung dedikasi para pendidik dalam menyajikan konsep kimia yang abstrak secara interaktif dan visual.</span>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // KASUS 3: PENGGUNA TERAUTENTIKASI SEBAGAI SISWA (STUDENT)
+  // Fitur, alur, dan komponen siswa 100% dipertahankan tanpa perubahan
+  // =========================================================================
   return (
     <div className="app-layout">
-      {/* Navbar Atas dengan info Profil Pengguna, Ikon Profil, & Tombol Logout */}
+      {/* Navbar Atas dengan info Profil Siswa, Ikon Profil, & Tombol Logout */}
       <Navbar 
         _currentStep={currentStep} 
         setStep={goToStep} 
@@ -213,7 +455,7 @@ export default function App() {
         isProfileActive={isProfileView}
       />
 
-      {/* Konten Halaman: Menampilkan Profil Pengguna ATAU Modul Pembelajaran 5E */}
+      {/* Konten Halaman: Menampilkan Profil Siswa ATAU Modul Pembelajaran 5E */}
       {isProfileView ? (
         <main className="main-content">
           <Profile 
@@ -298,7 +540,7 @@ export default function App() {
         </>
       )}
 
-      {/* Footer Aplikasi */}
+      {/* Footer Aplikasi Siswa */}
       <footer className="app-footer">
         <div className="footer-content">
           <p>© <strong>Chemify</strong> — Web Pembelajaran Kimia Asam-Basa Berbasis Model 5E (SMA Kelas XI)</p>

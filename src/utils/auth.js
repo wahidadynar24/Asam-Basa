@@ -79,6 +79,8 @@ export function findUserByEmail(email) {
  */
 export async function initDefaultDemoUser() {
   const users = getRegisteredUsers();
+  let modified = false;
+
   if (users.length === 0) {
     const defaultSalt = generateSalt();
     const defaultHash = await hashPassword('Siswa123!', defaultSalt);
@@ -86,6 +88,7 @@ export async function initDefaultDemoUser() {
       id: 'user_demo_chemify_1',
       name: 'Siswa Chemify',
       email: 'siswa@chemify.edu',
+      role: 'student',
       salt: defaultSalt,
       passwordHash: defaultHash,
       school: 'SMA Negeri 1 Edukasi',
@@ -97,7 +100,42 @@ export async function initDefaultDemoUser() {
       photoUrl: '',
       createdAt: new Date().toISOString()
     };
-    saveUsers([demoUser]);
+    users.push(demoUser);
+    modified = true;
+  } else {
+    // Pastikan user demo siswa memiliki atribut role
+    const demoStudent = users.find(u => u.id === 'user_demo_chemify_1' || u.email === 'siswa@chemify.edu');
+    if (demoStudent && !demoStudent.role) {
+      demoStudent.role = 'student';
+      modified = true;
+    }
+  }
+
+  // Inisialisasi Akun Demo Guru jika belum ada akun guru terdaftar
+  const hasTeacher = users.some(u => u.role === 'teacher' || u.email === 'guru@chemify.edu');
+  if (!hasTeacher) {
+    const teacherSalt = generateSalt();
+    const teacherHash = await hashPassword('Guru123!', teacherSalt);
+    const demoTeacher = {
+      id: 'user_demo_guru_1',
+      name: 'Budi Santoso, S.Pd., M.Si.',
+      email: 'guru@chemify.edu',
+      role: 'teacher',
+      salt: teacherSalt,
+      passwordHash: teacherHash,
+      school: 'SMA Negeri 1 Edukasi',
+      subject: 'Kimia',
+      accountStatus: 'Aktif',
+      bio: 'Guru Kimia SMA yang berfokus pada inovasi pembelajaran visual dan interaktif 5E.',
+      photoUrl: '',
+      createdAt: new Date().toISOString()
+    };
+    users.push(demoTeacher);
+    modified = true;
+  }
+
+  if (modified) {
+    saveUsers(users);
   }
 }
 
@@ -185,6 +223,7 @@ export async function registerUser({ name, email, password, confirmPassword }) {
     id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     name: trimmedName,
     email: trimmedEmail,
+    role: 'student',
     salt,
     passwordHash,
     createdAt: new Date().toISOString()
@@ -198,12 +237,98 @@ export async function registerUser({ name, email, password, confirmPassword }) {
   return {
     id: newUser.id,
     name: newUser.name,
-    email: newUser.email
+    email: newUser.email,
+    role: 'student'
   };
 }
 
 /**
- * Otentikasi login pengguna
+ * Mendaftarkan akun Guru baru (Teacher Register)
+ * @param {object} param0 
+ */
+export async function registerTeacher({ name, email, password, confirmPassword, school, subject }) {
+  const trimmedName = (name || '').trim();
+  const trimmedEmail = (email || '').trim().toLowerCase();
+  const trimmedSchool = (school || '').trim();
+  const trimmedSubject = (subject || '').trim();
+
+  // Validasi seluruh kolom wajib diisi
+  if (!trimmedName) {
+    throw new Error('Nama Lengkap Guru wajib diisi.');
+  }
+  if (!trimmedEmail) {
+    throw new Error('Email dinas / email aktif wajib diisi.');
+  }
+  if (!trimmedSchool) {
+    throw new Error('Nama Sekolah / Institusi wajib diisi.');
+  }
+  if (!trimmedSubject) {
+    throw new Error('Mata Pelajaran yang diampu wajib diisi.');
+  }
+  if (!password) {
+    throw new Error('Password wajib diisi.');
+  }
+  if (!confirmPassword) {
+    throw new Error('Konfirmasi Password wajib diisi.');
+  }
+
+  // Validasi format email
+  if (!validateEmailFormat(trimmedEmail)) {
+    throw new Error('Format email tidak valid (contoh: guru@sekolah.sch.id).');
+  }
+
+  // Validasi kecocokan password
+  if (password !== confirmPassword) {
+    throw new Error('Password dan Konfirmasi Password tidak cocok.');
+  }
+
+  // Validasi kekuatan password
+  const strength = validatePasswordStrength(password);
+  if (!strength.isValid) {
+    throw new Error(strength.message);
+  }
+
+  // Validasi keunikan email di seluruh sistem
+  const existingUser = findUserByEmail(trimmedEmail);
+  if (existingUser) {
+    throw new Error('Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.');
+  }
+
+  // Hashing password dengan salt kriptografis
+  const salt = generateSalt();
+  const passwordHash = await hashPassword(password, salt);
+
+  const newTeacher = {
+    id: `teacher_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    name: trimmedName,
+    email: trimmedEmail,
+    role: 'teacher',
+    salt,
+    passwordHash,
+    school: trimmedSchool,
+    subject: trimmedSubject,
+    accountStatus: 'Aktif',
+    bio: `Guru ${trimmedSubject} di ${trimmedSchool}`,
+    photoUrl: '',
+    createdAt: new Date().toISOString()
+  };
+
+  const currentUsers = getRegisteredUsers();
+  currentUsers.push(newTeacher);
+  saveUsers(currentUsers);
+
+  return {
+    id: newTeacher.id,
+    name: newTeacher.name,
+    email: newTeacher.email,
+    role: 'teacher',
+    school: newTeacher.school,
+    subject: newTeacher.subject
+  };
+}
+
+/**
+ * Otentikasi login pengguna (Umum / Siswa)
  * @param {string} email 
  * @param {string} password 
  * @param {boolean} rememberMe 
@@ -234,6 +359,60 @@ export async function loginUser({ email, password, rememberMe = false }) {
     id: user.id,
     name: user.name,
     email: user.email,
+    role: user.role || 'student',
+    photoUrl: user.photoUrl || '',
+    school: user.school || '',
+    subject: user.subject || '',
+    accountStatus: user.accountStatus || 'Aktif',
+    loggedInAt: new Date().toISOString(),
+    rememberMe: Boolean(rememberMe)
+  };
+
+  saveSession(sessionData, rememberMe);
+
+  return sessionData;
+}
+
+/**
+ * Otentikasi login khusus Guru (Role-based Teacher Authentication)
+ * @param {string} email 
+ * @param {string} password 
+ * @param {boolean} rememberMe 
+ */
+export async function loginTeacher({ email, password, rememberMe = false }) {
+  const trimmedEmail = (email || '').trim().toLowerCase();
+
+  if (!trimmedEmail) {
+    throw new Error('Email wajib diisi.');
+  }
+  if (!password) {
+    throw new Error('Password wajib diisi.');
+  }
+
+  const user = findUserByEmail(trimmedEmail);
+  if (!user) {
+    throw new Error('Email atau password tidak sesuai.');
+  }
+
+  // Verifikasi hash
+  const calculatedHash = await hashPassword(password, user.salt);
+  if (calculatedHash !== user.passwordHash) {
+    throw new Error('Email atau password tidak sesuai.');
+  }
+
+  // VALIDASI PERAN KETAT (RBAC): Cegah akun non-guru masuk lewat portal guru
+  if (user.role !== 'teacher') {
+    throw new Error('Akses ditolak: Akun ini terdaftar sebagai Siswa. Silakan masuk melalui Halaman Login Siswa.');
+  }
+
+  const sessionData = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: 'teacher',
+    school: user.school || '',
+    subject: user.subject || 'Kimia',
+    accountStatus: user.accountStatus || 'Aktif',
     photoUrl: user.photoUrl || '',
     loggedInAt: new Date().toISOString(),
     rememberMe: Boolean(rememberMe)
@@ -266,16 +445,26 @@ export function saveSession(sessionData, rememberMe) {
  */
 export function getActiveSession() {
   try {
+    let session = null;
     // Periksa sessionStorage terlebih dahulu (sesi saat ini)
     const sessionRaw = sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (sessionRaw) {
-      return JSON.parse(sessionRaw);
+      session = JSON.parse(sessionRaw);
+    } else {
+      // Jika tidak ada di sessionStorage, periksa localStorage (Remember Me)
+      const localRaw = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (localRaw) {
+        session = JSON.parse(localRaw);
+      }
     }
 
-    // Jika tidak ada di sessionStorage, periksa localStorage (Remember Me)
-    const localRaw = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (localRaw) {
-      return JSON.parse(localRaw);
+    if (session) {
+      // Pastikan atribut role selalu tersedia pada sesi
+      if (!session.role) {
+        const u = findUserByEmail(session.email);
+        session.role = (u && u.role) ? u.role : 'student';
+      }
+      return session;
     }
 
     return null;
@@ -348,6 +537,7 @@ export function getUserProfile(userId) {
     id: user.id,
     name: user.name || '',
     email: user.email || '',
+    role: user.role || 'student',
     photoUrl: user.photoUrl || '',
     school: user.school || '',
     educationLevel: user.educationLevel || 'SMA',
@@ -424,5 +614,111 @@ export function updateUserProfile(userId, profileData) {
   }
 
   return getUserProfile(userId);
+}
+
+/**
+ * Mengambil profil lengkap akun Guru berdasarkan ID
+ * @param {string} teacherId 
+ */
+export function getTeacherProfile(teacherId) {
+  if (!teacherId) return null;
+  const users = getRegisteredUsers();
+  const user = users.find(u => u.id === teacherId);
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    name: user.name || '',
+    email: user.email || '',
+    role: 'teacher',
+    photoUrl: user.photoUrl || '',
+    school: user.school || '',
+    subject: user.subject || 'Kimia',
+    accountStatus: user.accountStatus || 'Aktif',
+    bio: user.bio || '',
+    createdAt: user.createdAt || ''
+  };
+}
+
+/**
+ * Memperbarui profil akun Guru
+ * @param {string} teacherId 
+ * @param {object} profileData 
+ */
+export function updateTeacherProfile(teacherId, profileData) {
+  if (!teacherId) {
+    throw new Error('ID akun guru tidak valid.');
+  }
+
+  const trimmedName = (profileData.name || '').trim();
+  const trimmedSchool = (profileData.school || '').trim();
+  const trimmedSubject = (profileData.subject || '').trim();
+
+  // Validasi kolom wajib diisi
+  if (!trimmedName) {
+    throw new Error('Nama Lengkap Guru wajib diisi.');
+  }
+  if (!trimmedSchool) {
+    throw new Error('Nama Sekolah / Institusi wajib diisi.');
+  }
+  if (!trimmedSubject) {
+    throw new Error('Mata Pelajaran yang diampu wajib diisi.');
+  }
+
+  const users = getRegisteredUsers();
+  const index = users.findIndex(u => u.id === teacherId);
+  if (index === -1) {
+    throw new Error('Data guru tidak ditemukan dalam sistem.');
+  }
+
+  // PROTEKSI PERAN: Pastikan role tetap 'teacher' dan tidak dapat dimanipulasi
+  const updatedTeacher = {
+    ...users[index],
+    name: trimmedName,
+    photoUrl: profileData.photoUrl !== undefined ? profileData.photoUrl : (users[index].photoUrl || ''),
+    school: trimmedSchool,
+    subject: trimmedSubject,
+    bio: (profileData.bio || '').trim(),
+    role: 'teacher',
+    accountStatus: users[index].accountStatus || 'Aktif',
+    updatedAt: new Date().toISOString()
+  };
+
+  users[index] = updatedTeacher;
+  saveUsers(users);
+
+  // Perbarui juga sesi aktif jika pengguna yang diupdate adalah sesi yang sedang berjalan
+  const activeSession = getActiveSession();
+  if (activeSession && activeSession.id === teacherId) {
+    const updatedSession = {
+      ...activeSession,
+      name: updatedTeacher.name,
+      photoUrl: updatedTeacher.photoUrl,
+      school: updatedTeacher.school,
+      subject: updatedTeacher.subject
+    };
+    saveSession(updatedSession, activeSession.rememberMe);
+  }
+
+  return getTeacherProfile(teacherId);
+}
+
+/**
+ * Mengambil daftar seluruh Siswa terdaftar untuk dashboard pemantauan Guru
+ */
+export function getAllStudents() {
+  const users = getRegisteredUsers();
+  return users
+    .filter(u => u.role !== 'teacher')
+    .map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      school: u.school || 'SMA Negeri 1 Edukasi',
+      grade: u.grade || 'XI',
+      major: u.major || 'MIPA',
+      photoUrl: u.photoUrl || '',
+      createdAt: u.createdAt || ''
+    }));
 }
 
