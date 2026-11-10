@@ -8,9 +8,16 @@ import Explain from './pages/Explain';
 import Elaborate from './pages/Elaborate';
 import Evaluate from './pages/Evaluate';
 import Results from './pages/Results';
+import Auth from './pages/Auth';
+import { getActiveSession, logoutUser } from './utils/auth';
 import './App.css';
 
 export default function App() {
+  // 0. Autentikasi Pengguna & Proteksi Dashboard
+  const [currentUser, setCurrentUser] = useState(() => {
+    return getActiveSession();
+  });
+
   // 1. Current Step: 0 = Home, 1 = Engage, 2 = Explore, 3 = Explain, 4 = Elaborate, 5 = Evaluate, 6 = Results
   const [currentStep, setCurrentStep] = useState(() => {
     const saved = localStorage.getItem('chem_current_step');
@@ -62,30 +69,69 @@ export default function App() {
     return saved !== null ? parseInt(saved, 10) : 0;
   });
 
-  // Sinkronisasi ke localStorage setiap ada perubahan
+  // Sinkronisasi status autentikasi berkala jika tab lain logout
   useEffect(() => {
-    localStorage.setItem('chem_current_step', currentStep.toString());
-  }, [currentStep]);
+    const handleStorageChange = () => {
+      const session = getActiveSession();
+      setCurrentUser(session);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Sinkronisasi modul pembelajaran ke localStorage setiap ada perubahan
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('chem_current_step', currentStep.toString());
+    }
+  }, [currentStep, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('chem_completed_steps', JSON.stringify(completedSteps));
-  }, [completedSteps]);
+    if (currentUser) {
+      localStorage.setItem('chem_completed_steps', JSON.stringify(completedSteps));
+    }
+  }, [completedSteps, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('chem_user_prediction', JSON.stringify(userPrediction));
-  }, [userPrediction]);
+    if (currentUser) {
+      localStorage.setItem('chem_user_prediction', JSON.stringify(userPrediction));
+    }
+  }, [userPrediction, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('chem_elaborate_progress', JSON.stringify(elaborateProgress));
-  }, [elaborateProgress]);
+    if (currentUser) {
+      localStorage.setItem('chem_elaborate_progress', JSON.stringify(elaborateProgress));
+    }
+  }, [elaborateProgress, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('chem_quiz_answers', JSON.stringify(quizAnswers));
-  }, [quizAnswers]);
+    if (currentUser) {
+      localStorage.setItem('chem_quiz_answers', JSON.stringify(quizAnswers));
+    }
+  }, [quizAnswers, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('chem_quiz_score', quizScore.toString());
-  }, [quizScore]);
+    if (currentUser) {
+      localStorage.setItem('chem_quiz_score', quizScore.toString());
+    }
+  }, [quizScore, currentUser]);
+
+  // Handler Sukses Login
+  const handleLoginSuccess = (userSession) => {
+    setCurrentUser(userSession);
+    // Langsung arahkan pengguna ke Dashboard CHEMIFY
+    setCurrentStep(0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handler Logout
+  const handleLogout = () => {
+    if (window.confirm(`Hai ${currentUser?.name || 'Siswa'}, apakah kamu yakin ingin keluar dari akun Chemify?`)) {
+      logoutUser();
+      setCurrentUser(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // Scroll ke atas saat berpindah tahap
   const goToStep = (step) => {
@@ -100,7 +146,7 @@ export default function App() {
     goToStep(nextStep);
   };
 
-  // Reset progress
+  // Reset progress modul pembelajaran
   const handleReset = () => {
     if (window.confirm('Apakah kamu yakin ingin mengulang seluruh modul pembelajaran dari awal? Progress kuis dan simulasi akan direset.')) {
       localStorage.removeItem('chem_current_step');
@@ -121,13 +167,25 @@ export default function App() {
     }
   };
 
+  // PROTEKSI DASHBOARD: Jika belum terautentikasi, tampilkan halaman Login & Registrasi
+  if (!currentUser) {
+    return (
+      <div className="app-layout auth-layout">
+        <Auth onLoginSuccess={handleLoginSuccess} />
+      </div>
+    );
+  }
+
+  // JIKA SUDAH LOGIN: Tampilkan Dashboard CHEMIFY & Alur Pembelajaran 5E
   return (
     <div className="app-layout">
-      {/* Navbar Atas */}
+      {/* Navbar Atas dengan info Profil Pengguna & Tombol Logout */}
       <Navbar 
         currentStep={currentStep} 
         setStep={goToStep} 
-        onReset={handleReset} 
+        onReset={handleReset}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* Stepper Progress Bar 5E */}

@@ -1,9 +1,20 @@
 import React from 'react';
 
-export default function Navbar({ currentStep, setStep, onReset }) {
+export default function Navbar({ _currentStep, setStep, onReset, currentUser, onLogout }) {
+  // Ambil inisial nama pengguna untuk avatar
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-container">
+        {/* Brand Logo & Title */}
         <div className="navbar-brand" onClick={() => setStep(0)} role="button" tabIndex={0}>
           <div className="brand-logo">
             <span className="logo-icon">⚗️</span>
@@ -14,7 +25,21 @@ export default function Navbar({ currentStep, setStep, onReset }) {
           </div>
         </div>
 
+        {/* Navbar Actions: User Profile & Controls */}
         <div className="navbar-actions">
+          {currentUser && (
+            <div className="navbar-user-profile" title={`Login sebagai: ${currentUser.email}`}>
+              <div className="user-avatar-badge">
+                {getInitials(currentUser.name)}
+              </div>
+              <div className="user-info-text">
+                <span className="user-name-display">{currentUser.name}</span>
+                <span className="user-role-tag">Siswa</span>
+              </div>
+            </div>
+          )}
+
+          {/* Tombol Reset Modul */}
           <button 
             type="button" 
             className="btn-icon" 
@@ -24,6 +49,19 @@ export default function Navbar({ currentStep, setStep, onReset }) {
             <span className="btn-icon-symbol">↺</span>
             <span className="btn-label-mobile-hide">Ulangi Modul</span>
           </button>
+
+          {/* Tombol Logout */}
+          {currentUser && onLogout && (
+            <button 
+              type="button" 
+              className="btn-icon btn-logout" 
+              onClick={onLogout}
+              title="Keluar dari akun Chemify"
+            >
+              <span className="btn-icon-symbol">🚪</span>
+              <span className="btn-label-mobile-hide">Keluar</span>
+            </button>
+          )}
         </div>
       </div>
     </header>
