@@ -1,7 +1,16 @@
 import React from 'react';
 
-export default function Navbar({ _currentStep, setStep, onReset, currentUser, isCloudConnected = false, onLogout }) {
-  // Ambil inisial nama pengguna untuk avatar
+export default function Navbar({ 
+  _currentStep, 
+  setStep, 
+  onReset, 
+  currentUser, 
+  isCloudConnected = false,
+  onLogout,
+  onOpenProfile,
+  isProfileActive = false
+}) {
+  // Ambil inisial nama pengguna jika foto profil belum diunggah
   const getInitials = (name) => {
     if (!name) return 'U';
     const parts = name.trim().split(' ');
@@ -11,11 +20,21 @@ export default function Navbar({ _currentStep, setStep, onReset, currentUser, is
     return parts[0].slice(0, 2).toUpperCase();
   };
 
+  const handleBrandClick = () => {
+    if (setStep) setStep(0);
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-container">
         {/* Brand Logo & Title */}
-        <div className="navbar-brand" onClick={() => setStep(0)} role="button" tabIndex={0}>
+        <div 
+          className="navbar-brand" 
+          onClick={handleBrandClick} 
+          role="button" 
+          tabIndex={0}
+          title="Kembali ke Beranda CHEMIFY"
+        >
           <div className="brand-logo">
             <span className="logo-icon">⚗️</span>
           </div>
@@ -27,15 +46,32 @@ export default function Navbar({ _currentStep, setStep, onReset, currentUser, is
 
         {/* Navbar Actions: User Profile & Controls */}
         <div className="navbar-actions">
+          {/* Ikon Profil Pengguna di Pojok Kanan Atas */}
           {currentUser && (
-            <div className="navbar-user-profile" title={`Login sebagai: ${currentUser.email}`}>
+            <button
+              type="button"
+              className={`navbar-user-profile ${isProfileActive ? 'active' : ''}`} 
+              onClick={onOpenProfile}
+              title="Buka Profil Saya (Klik untuk melihat & mengedit profil)"
+              aria-label="Profil Saya"
+            >
               <div className="user-avatar-badge">
-                {getInitials(currentUser.name)}
+                {currentUser.photoUrl ? (
+                  <img 
+                    src={currentUser.photoUrl} 
+                    alt={currentUser.name} 
+                    className="user-avatar-img" 
+                  />
+                ) : (
+                  <span className="user-avatar-initials">
+                    {getInitials(currentUser.name)}
+                  </span>
+                )}
               </div>
               <div className="user-info-text">
                 <span className="user-name-display">{currentUser.name}</span>
                 <div className="user-meta-tags">
-                  <span className="user-role-tag">Siswa</span>
+                  <span className="user-role-tag">Profil Siswa</span>
                   <span 
                     className={`cloud-status-tag ${isCloudConnected ? 'connected' : 'offline'}`}
                     title={isCloudConnected ? 'Tersinkron ke Firebase Cloud' : 'Mode Penyimpanan Lokal'}
@@ -44,7 +80,8 @@ export default function Navbar({ _currentStep, setStep, onReset, currentUser, is
                   </span>
                 </div>
               </div>
-            </div>
+              <span className="profile-indicator-icon">👤</span>
+            </button>
           )}
 
           {/* Tombol Reset Modul */}

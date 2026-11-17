@@ -119,6 +119,13 @@ export async function initDefaultDemoUser() {
       email: 'siswa@chemify.edu',
       salt: defaultSalt,
       passwordHash: defaultHash,
+      school: 'SMA Negeri 1 Edukasi',
+      educationLevel: 'SMA',
+      grade: 'XI',
+      major: 'MIPA (Matematika & IPA)',
+      attendanceNumber: '01',
+      bio: 'Siswa antusias kimia yang sedang mempelajari modul asam-basa 5E.',
+      photoUrl: '',
       createdAt: new Date().toISOString()
     };
     saveUsers([demoUser]);
@@ -291,6 +298,7 @@ export async function loginUser({ email, password, rememberMe = false }) {
     id: user.id,
     name: user.name,
     email: user.email,
+    photoUrl: user.photoUrl || '',
     loggedInAt: new Date().toISOString(),
     rememberMe: Boolean(rememberMe),
     provider: 'local'
@@ -405,4 +413,125 @@ export async function resetUserPassword({ email, newPassword, confirmPassword })
   saveUsers(users);
 
   return { success: true, message: 'Password berhasil diperbarui. Silakan masuk kembali.' };
+}
+
+/**
+ * Mengambil profil lengkap pengguna berdasarkan ID
+ * @param {string} userId 
+ */
+export function getUserProfile(userId) {
+  if (!userId) return null;
+  const users = getRegisteredUsers();
+  const user = users.find(u => u.id === userId);
+  if (user) {
+    return {
+      id: user.id,
+      name: user.name || '',
+      email: user.email || '',
+      photoUrl: user.photoUrl || '',
+      school: user.school || '',
+      educationLevel: user.educationLevel || 'SMA',
+      grade: user.grade || 'XI',
+      major: user.major || 'MIPA (Matematika & IPA)',
+      attendanceNumber: user.attendanceNumber || '',
+      bio: user.bio || '',
+      createdAt: user.createdAt || ''
+    };
+  }
+
+  // Fallback ke activeSession jika pengguna login via Firebase belum tersimpan di local list
+  const activeSession = getActiveSession();
+  if (activeSession && activeSession.id === userId) {
+    return {
+      id: activeSession.id,
+      name: activeSession.name || '',
+      email: activeSession.email || '',
+      photoUrl: activeSession.photoUrl || '',
+      school: 'SMA Negeri 1 Edukasi',
+      educationLevel: 'SMA',
+      grade: 'XI',
+      major: 'MIPA (Matematika & IPA)',
+      attendanceNumber: '',
+      bio: '',
+      createdAt: ''
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Memperbarui profil pengguna
+ * @param {string} userId 
+ * @param {object} profileData 
+ */
+export function updateUserProfile(userId, profileData) {
+  if (!userId) {
+    throw new Error('ID pengguna tidak valid.');
+  }
+
+  const trimmedName = (profileData.name || '').trim();
+  const trimmedSchool = (profileData.school || '').trim();
+  const trimmedMajor = (profileData.major || '').trim();
+
+  // Validasi kolom wajib diisi
+  if (!trimmedName) {
+    throw new Error('Nama Lengkap wajib diisi.');
+  }
+  if (!trimmedSchool) {
+    throw new Error('Nama Sekolah wajib diisi.');
+  }
+  if (!profileData.educationLevel) {
+    throw new Error('Jenjang Pendidikan wajib dipilih.');
+  }
+  if (!profileData.grade) {
+    throw new Error('Kelas wajib dipilih.');
+  }
+  if (!trimmedMajor) {
+    throw new Error('Jurusan wajib diisi.');
+  }
+
+  const users = getRegisteredUsers();
+  const index = users.findIndex(u => u.id === userId);
+
+  const updatedUser = {
+    ...(index !== -1 ? users[index] : {}),
+    id: userId,
+    name: trimmedName,
+    photoUrl: profileData.photoUrl !== undefined ? profileData.photoUrl : (index !== -1 ? users[index].photoUrl : ''),
+    school: trimmedSchool,
+    educationLevel: profileData.educationLevel,
+    grade: profileData.grade,
+    major: trimmedMajor,
+    attendanceNumber: (profileData.attendanceNumber || '').trim(),
+    bio: (profileData.bio || '').trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  if (index !== -1) {
+    users[index] = updatedUser;
+  } else {
+    users.push(updatedUser);
+  }
+  saveUsers(users);
+
+  // Perbarui juga sesi aktif jika pengguna yang diupdate adalah sesi yang sedang berjalan
+  const activeSession = getActiveSession();
+  if (activeSession && activeSession.id === userId) {
+    const updatedSession = {
+      ...activeSession,
+      name: updatedUser.name,
+      photoUrl: updatedUser.photoUrl
+    };
+    saveSession(updatedSession, activeSession.rememberMe);
+  }
+
+  // Sinkronkan ke Cloud Firestore jika Firebase aktif
+  if (isFirebaseConfigured()) {
+    saveUserProfile(userId, updatedUser).catch((err) => {
+      console.warn('Gagal menyinkronkan profil ke Firestore:', err);
+    });
+  }
+
+  return getUserProfile(userId);
 }
