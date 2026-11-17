@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { QUIZ_QUESTIONS } from '../data/quizData';
 import { PREDICTION_OPTIONS } from '../data/engageData';
+import { isFirebaseConfigured } from '../services/firebase';
+import { saveQuizEvaluationRecord, saveStudentProgress } from '../services/firestoreService';
 
 export default function Results({
   quizScore,
   quizAnswers,
   userPrediction,
   elaborateProgress,
+  currentUser,
   onReset
 }) {
   const [reflectionNote, setReflectionNote] = useState(
@@ -15,9 +18,36 @@ export default function Results({
   const [reflectionSaved, setReflectionSaved] = useState(Boolean(localStorage.getItem('student_reflection')));
   const [showReview, setShowReview] = useState(false);
 
-  const handleSaveReflection = () => {
+  const handleSaveReflection = async () => {
     localStorage.setItem('student_reflection', reflectionNote);
     setReflectionSaved(true);
+
+    // Simpan ke Cloud Firestore jika terhubung
+    if (currentUser?.id && isFirebaseConfigured()) {
+      try {
+        await saveQuizEvaluationRecord(currentUser.id, {
+          studentName: currentUser.name,
+          studentEmail: currentUser.email,
+          quizScore,
+          quizAnswers,
+          userPrediction,
+          studentReflection: reflectionNote
+        });
+
+        await saveStudentProgress(currentUser.id, {
+          userName: currentUser.name,
+          userEmail: currentUser.email,
+          currentStep: 6,
+          quizScore,
+          quizAnswers,
+          userPrediction,
+          elaborateProgress,
+          studentReflection: reflectionNote
+        });
+      } catch (err) {
+        console.warn('Gagal menyimpan refleksi ke Firestore:', err);
+      }
+    }
   };
 
   // Predikat Nilai
@@ -162,7 +192,11 @@ export default function Results({
             >
               {reflectionSaved ? '✓ Refleksi Tersimpan' : 'Simpan Refleksi Saya'}
             </button>
-            {reflectionSaved && <span className="ref-saved-badge">Refleksi tersimpan di browser!</span>}
+            {reflectionSaved && (
+              <span className="ref-saved-badge">
+                {isFirebaseConfigured() ? '✓ Refleksi tersimpan di browser & Cloud Firebase!' : 'Refleksi tersimpan di browser!'}
+              </span>
+            )}
           </div>
         </div>
       </section>

@@ -5,6 +5,7 @@ export default function Navbar({
   setStep, 
   onReset, 
   currentUser, 
+  isCloudConnected = false,
   onLogout,
   onOpenProfile,
   isProfileActive = false
@@ -69,7 +70,15 @@ export default function Navbar({
               </div>
               <div className="user-info-text">
                 <span className="user-name-display">{currentUser.name}</span>
-                <span className="user-role-tag">Profil Siswa</span>
+                <div className="user-meta-tags">
+                  <span className="user-role-tag">Profil Siswa</span>
+                  <span 
+                    className={`cloud-status-tag ${isCloudConnected ? 'connected' : 'offline'}`}
+                    title={isCloudConnected ? 'Tersinkron ke Firebase Cloud' : 'Mode Penyimpanan Lokal'}
+                  >
+                    {isCloudConnected ? '☁️ Cloud' : '💾 Lokal'}
+                  </span>
+                </div>
               </div>
               <span className="profile-indicator-icon">👤</span>
             </button>
