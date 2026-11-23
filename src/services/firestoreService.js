@@ -2,14 +2,28 @@ import {
   doc, 
   setDoc, 
   getDoc, 
+  getDocs,
   collection, 
   addDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
+import { db, isFirebaseConfigured } from './firebase.js';
 
 /**
- * Menyimpan profil pengguna/siswa ke Firestore
+ * Daftar email yang secara aman diotorisasi sebagai Guru di tingkat sistem
+ */
+export const AUTHORIZED_TEACHER_EMAILS = [
+  'karenina.zulfa.2403316@students.um.ac.id',
+  'guru@chemify.edu'
+];
+
+export function isAuthorizedTeacherEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  return AUTHORIZED_TEACHER_EMAILS.some(t => t.toLowerCase() === email.trim().toLowerCase());
+}
+
+/**
+ * Menyimpan profil pengguna ke Firestore dengan validasi Role aman (RBAC)
  */
 export async function saveUserProfile(userId, profileData) {
   if (!isFirebaseConfigured() || !db || !userId) {
@@ -17,17 +31,29 @@ export async function saveUserProfile(userId, profileData) {
   }
 
   try {
+    const userEmail = (profileData.email || '').trim().toLowerCase();
+    // Penetapan role aman di backend: jika email guru resmi -> teacher, default -> student
+    const assignedRole = isAuthorizedTeacherEmail(userEmail) ? 'teacher' : (profileData.role === 'teacher' && isAuthorizedTeacherEmail(userEmail) ? 'teacher' : 'student');
+
     const userDocRef = doc(db, 'users', userId);
     await setDoc(userDocRef, {
       id: userId,
       name: profileData.name || '',
-      email: profileData.email || '',
-      role: 'siswa',
+      email: userEmail,
+      role: assignedRole,
+      school: profileData.school || '',
+      educationLevel: profileData.educationLevel || 'SMA',
+      grade: profileData.grade || 'XI',
+      major: profileData.major || 'MIPA',
+      subject: profileData.subject || (assignedRole === 'teacher' ? 'Kimia SMA' : ''),
+      attendanceNumber: profileData.attendanceNumber || '',
+      bio: profileData.bio || '',
+      photoUrl: profileData.photoUrl || '',
       updatedAt: serverTimestamp(),
       ...(profileData.createdAt ? { createdAt: profileData.createdAt } : { createdAt: serverTimestamp() })
     }, { merge: true });
 
-    return { success: true, mode: 'firestore' };
+    return { success: true, mode: 'firestore', role: assignedRole };
   } catch (error) {
     console.warn('⚠️ [Firestore] Gagal menyimpan profil pengguna:', error);
     return { success: false, error };
@@ -91,8 +117,64 @@ export async function getStudentProgress(userId) {
 }
 
 /**
+ * Mengambil seluruh data Siswa beserta aktivitas pembelajarannya dari Cloud Firestore
+ * Digunakan pada Panel Dashboard Guru
+ */
+export async function getStudentsFromCloud() {
+  if (!isFirebaseConfigured() || !db) {
+    return { success: false, data: [] };
+  }
+
+  try {
+    const usersSnap = await getDocs(collection(db, 'users'));
+    const progressSnap = await getDocs(collection(db, 'student_progress'));
+
+    const progressMap = {};
+    progressSnap.forEach((docSnap) => {
+      progressMap[docSnap.id] = docSnap.data();
+    });
+
+    const students = [];
+    usersSnap.forEach((docSnap) => {
+      const u = docSnap.data();
+      const email = (u.email || '').toLowerCase();
+      // Pastikan akun bukan guru
+      if (u.role !== 'teacher' && !isAuthorizedTeacherEmail(email)) {
+        const prog = progressMap[docSnap.id] || {};
+        students.push({
+          id: docSnap.id,
+          name: u.name || 'Siswa',
+          email: u.email || '',
+          school: u.school || 'SMA Negeri 1 Edukasi',
+          educationLevel: u.educationLevel || 'SMA',
+          grade: u.grade || 'XI',
+          major: u.major || 'MIPA',
+          attendanceNumber: u.attendanceNumber || '-',
+          bio: u.bio || '',
+          photoUrl: u.photoUrl || '',
+          createdAt: u.createdAt || '',
+          // Data Aktivitas Belajar 5E
+          currentStep: prog.currentStep ?? 0,
+          completedSteps: prog.completedSteps || [],
+          quizScore: prog.quizScore ?? 0,
+          userPrediction: prog.userPrediction || null,
+          elaborateProgress: prog.elaborateProgress || {},
+          quizAnswers: prog.quizAnswers || {},
+          studentReflection: prog.studentReflection || '',
+          lastActive: prog.updatedAt || u.updatedAt || ''
+        });
+      }
+    });
+
+    return { success: true, data: students };
+  } catch (error) {
+    console.warn('⚠️ [Firestore] Gagal memuat data siswa untuk guru:', error);
+    return { success: false, error, data: [] };
+  }
+}
+
+/**
  * Menyimpan rekapitulasi hasil evaluasi kuis & refleksi siswa ke koleksi 'quiz_results'
- * Berguna bagi guru/peneliti untuk melihat riwayat nilai seluruh siswa.
  */
 export async function saveQuizEvaluationRecord(userId, evaluationData) {
   if (!isFirebaseConfigured() || !db || !userId) {
@@ -118,4 +200,3 @@ export async function saveQuizEvaluationRecord(userId, evaluationData) {
     return { success: false, error };
   }
 }
-

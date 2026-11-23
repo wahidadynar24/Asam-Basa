@@ -14,7 +14,7 @@ import TeacherAuth from './pages/TeacherAuth';
 import TeacherProfile from './pages/TeacherProfile';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherNavbar from './components/TeacherNavbar';
-import { getActiveSession, logoutUser } from './utils/auth';
+import { getActiveSession, logoutUser, saveStudentProgressToLocal } from './utils/auth';
 import { isFirebaseConfigured } from './services/firebase';
 import { saveStudentProgress, getStudentProgress } from './services/firestoreService';
 import './App.css';
@@ -192,31 +192,39 @@ export default function App() {
 
   // Sinkronisasi kemajuan belajar siswa ke Cloud Firestore (Debounced)
   useEffect(() => {
-    if (!currentUser?.id || !isFirebaseConfigured() || isTeacher) return;
+    if (!currentUser?.id || isTeacher) return;
 
-    const syncTimeout = setTimeout(() => {
-      saveStudentProgress(currentUser.id, {
-        userName: currentUser.name,
-        userEmail: currentUser.email,
-        currentStep,
-        completedSteps,
-        userPrediction,
-        elaborateProgress,
-        quizAnswers,
-        quizScore,
-        studentReflection: localStorage.getItem('student_reflection') || ''
-      });
-    }, 1200);
+    const progressPayload = {
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      currentStep,
+      completedSteps,
+      userPrediction,
+      elaborateProgress,
+      quizAnswers,
+      quizScore,
+      studentReflection: localStorage.getItem('student_reflection') || ''
+    };
 
-    return () => clearTimeout(syncTimeout);
+    // Simpan ke storage lokal per-siswa agar panel guru dapat membaca
+    saveStudentProgressToLocal(currentUser.id, progressPayload);
+
+    // Sinkronkan ke Cloud Firestore jika Firebase aktif (Debounced)
+    if (isFirebaseConfigured()) {
+      const syncTimeout = setTimeout(() => {
+        saveStudentProgress(currentUser.id, progressPayload);
+      }, 1200);
+      return () => clearTimeout(syncTimeout);
+    }
   }, [currentStep, completedSteps, userPrediction, elaborateProgress, quizAnswers, quizScore, currentUser, isTeacher]);
 
-  // Handler Sukses Login Siswa
+  // Handler Sukses Login Siswa / Umum (RBAC Auto-Routing)
   const handleLoginSuccess = (userSession) => {
     setCurrentUser(userSession);
     setIsProfileView(false);
     if (userSession.role === 'teacher') {
-      navigate('/guru/profil');
+      navigate('/guru/dashboard');
       return;
     }
     setCurrentStep(0);
@@ -224,10 +232,10 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handler Sukses Login Guru
+  // Handler Sukses Login Guru (RBAC Auto-Routing ke Teacher Dashboard)
   const handleTeacherLoginSuccess = (teacherSession) => {
     setCurrentUser(teacherSession);
-    navigate('/guru/profil');
+    navigate('/guru/dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -501,8 +509,32 @@ export default function App() {
 
   // =========================================================================
   // KASUS 3: PENGGUNA TERAUTENTIKASI SEBAGAI SISWA (STUDENT)
-  // Fitur, alur, dan komponen siswa 100% dipertahankan tanpa perubahan
   // =========================================================================
+
+  // RBAC GUARD KETAT: Siswa dilarang keras mengakses rute /guru (Teacher Dashboard & Profile)
+  if (isStudent && isTeacherRoute) {
+    return (
+      <div className="app-layout access-denied-layout">
+        <div className="access-denied-card">
+          <div className="access-denied-icon">🚫</div>
+          <span className="access-denied-badge">PROTEKSI RBAC CHEMIFY</span>
+          <h2>Akses Ditolak (403 Forbidden)</h2>
+          <p>
+            Akun Anda terdaftar sebagai <strong>Siswa (Student)</strong>. Anda tidak memiliki izin untuk mengakses halaman Dashboard Pendidik / Guru.
+          </p>
+          <button 
+            type="button" 
+            className="btn-primary-auth btn-back-student"
+            onClick={() => navigate('/')}
+          >
+            ← Kembali ke Dashboard Pembelajaran Siswa
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Tampilan Dashboard Pembelajaran Siswa 100% dipertahankan tanpa perubahan
   return (
     <div className="app-layout">
       {/* Navbar Atas dengan info Profil Siswa, Ikon Profil, & Tombol Logout */}

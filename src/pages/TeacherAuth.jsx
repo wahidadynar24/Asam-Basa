@@ -341,8 +341,8 @@ export default function TeacherAuth({
 
               {/* Demo Quick Credential Guru */}
               <div className="demo-credentials-badge teacher-demo-badge">
-                <span className="demo-badge-title">👨‍🏫 Akun Demo Guru Siap Pakai:</span>
-                <code>guru@chemify.edu</code> / <code>Guru123!</code>
+                <span className="demo-badge-title">👩‍🏫 Akun Guru Resmi:</span>
+                <code>karenina.zulfa.2403316@students.um.ac.id</code> / <code>Guru123!</code>
               </div>
 
               {/* Tautan Navigasi Tambahan */}
