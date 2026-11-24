@@ -96,7 +96,7 @@ export default function Engage({ onPrev, onNext, userPrediction, setUserPredicti
           </div>
         </div>
 
-        <div className="prediction-options-list">
+        <div className="prediction-options-list" role="radiogroup" aria-label="Pilihan Prediksi Karakter Asam-Basa">
           {PREDICTION_OPTIONS.map((opt) => (
             <label 
               key={opt.id} 
@@ -111,8 +111,9 @@ export default function Engage({ onPrev, onNext, userPrediction, setUserPredicti
                   setSelectedOption(opt.id);
                   setIsSaved(false);
                 }}
+                aria-label={opt.text}
               />
-              <span className="radio-custom"></span>
+              <span className="radio-custom" aria-hidden="true"></span>
               <span className="prediction-text">{opt.text}</span>
             </label>
           ))}

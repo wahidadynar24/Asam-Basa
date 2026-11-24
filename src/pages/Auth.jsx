@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   loginUser, 
   registerUser, 
@@ -12,6 +12,8 @@ import { isFirebaseConfigured } from '../services/firebase';
 export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'register'
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const forgotTriggerRef = useRef(null);
+  const modalRef = useRef(null);
 
   // Status notifikasi feedback
   const [errorMessage, setErrorMessage] = useState('');
@@ -223,6 +225,68 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
     }
   };
 
+  // Aksesibilitas Modal Lupa Password (05-09): Focus trap, Escape key, kembalikan fokus ke trigger
+  useEffect(() => {
+    if (!showForgotPasswordModal) return;
+
+    const prevActiveElement = document.activeElement;
+    const triggerEl = forgotTriggerRef.current;
+
+    const timer = setTimeout(() => {
+      const focusable = modalRef.current?.querySelectorAll(
+        'input:not([disabled]), button:not([disabled])'
+      );
+      if (focusable && focusable.length > 0) {
+        focusable[0].focus();
+      }
+    }, 50);
+
+    const handleKeyDown = (e) => {
+      // 1. Tombol Escape menutup modal
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowForgotPasswordModal(false);
+        return;
+      }
+
+      // 2. Focus Trap (Tab & Shift+Tab)
+      if (e.key === 'Tab') {
+        const focusableElements = modalRef.current?.querySelectorAll(
+          'input:not([disabled]), button:not([disabled])'
+        );
+        if (!focusableElements || focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      // Kembalikan fokus ke tombol pemicu setelah modal tertutup
+      if (triggerEl) {
+        triggerEl.focus();
+      } else if (prevActiveElement && typeof prevActiveElement.focus === 'function') {
+        prevActiveElement.focus();
+      }
+    };
+  }, [showForgotPasswordModal]);
+
   return (
     <div className="auth-page-wrapper">
       {/* Background Lab Chemistry Decorative Elements */}
@@ -339,6 +403,7 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
                   </label>
                   {/* Tautan Lupa Password */}
                   <button
+                    ref={forgotTriggerRef}
                     type="button"
                     className="btn-text-link"
                     onClick={() => {
@@ -664,18 +729,29 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
           MODAL PEMULIHAN KATA SANDI (LUPA PASSWORD)
          ========================================================================= */}
       {showForgotPasswordModal && (
-        <div className="modal-backdrop" onClick={() => setShowForgotPasswordModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="modal-backdrop" 
+          onClick={() => setShowForgotPasswordModal(false)}
+          role="presentation"
+        >
+          <div 
+            ref={modalRef}
+            className="modal-card" 
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-forgot-password-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <div className="modal-title-group">
-                <span className="modal-icon">🔑</span>
-                <h3>Atur Ulang Kata Sandi</h3>
+                <span className="modal-icon" aria-hidden="true">🔑</span>
+                <h3 id="modal-forgot-password-title">Atur Ulang Kata Sandi</h3>
               </div>
               <button 
                 type="button" 
                 className="modal-close-icon"
                 onClick={() => setShowForgotPasswordModal(false)}
-                aria-label="Tutup dialog"
+                aria-label="Tutup dialog pemulihan kata sandi"
               >
                 ✕
               </button>
