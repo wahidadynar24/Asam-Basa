@@ -459,6 +459,7 @@ export default function App() {
                 quizAnswers={quizAnswers}
                 userPrediction={userPrediction}
                 elaborateProgress={elaborateProgress}
+                completedSteps={completedSteps}
                 onReset={handleReset}
               />
             )}
@@ -627,6 +628,7 @@ export default function App() {
                 quizAnswers={quizAnswers}
                 userPrediction={userPrediction}
                 elaborateProgress={elaborateProgress}
+                completedSteps={completedSteps}
                 currentUser={currentUser}
                 onReset={handleReset}
               />

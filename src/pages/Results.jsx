@@ -9,6 +9,7 @@ export default function Results({
   quizAnswers,
   userPrediction,
   elaborateProgress,
+  completedSteps,
   currentUser,
   onReset
 }) {
@@ -38,6 +39,7 @@ export default function Results({
           userName: currentUser.name,
           userEmail: currentUser.email,
           currentStep: 6,
+          completedSteps: completedSteps && completedSteps.length > 0 ? completedSteps : [1, 2, 3, 4, 5],
           quizScore,
           quizAnswers,
           userPrediction,

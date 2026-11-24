@@ -65,26 +65,30 @@ export async function saveUserProfile(userId, profileData) {
  * @param {string} userId - ID Pengguna / UID Firebase
  * @param {object} progressData - Data kemajuan belajar 5E
  */
-export async function saveStudentProgress(userId, progressData) {
+export async function saveStudentProgress(userId, progressData = {}) {
   if (!isFirebaseConfigured() || !db || !userId) {
     return { success: false, mode: 'local' };
   }
 
   try {
     const progressDocRef = doc(db, 'student_progress', userId);
-    await setDoc(progressDocRef, {
+    // Pola update parsial: hanya kirim field yang didefinisikan dalam progressData agar tidak menimpa data yang ada
+    const updatePayload = {
       userId,
-      userName: progressData.userName || '',
-      userEmail: progressData.userEmail || '',
-      currentStep: progressData.currentStep ?? 0,
-      completedSteps: progressData.completedSteps || [],
-      userPrediction: progressData.userPrediction || null,
-      elaborateProgress: progressData.elaborateProgress || {},
-      quizAnswers: progressData.quizAnswers || {},
-      quizScore: progressData.quizScore ?? 0,
-      studentReflection: progressData.studentReflection || '',
       updatedAt: serverTimestamp()
-    }, { merge: true });
+    };
+
+    if (progressData.userName !== undefined) updatePayload.userName = progressData.userName;
+    if (progressData.userEmail !== undefined) updatePayload.userEmail = progressData.userEmail;
+    if (progressData.currentStep !== undefined) updatePayload.currentStep = progressData.currentStep;
+    if (progressData.completedSteps !== undefined) updatePayload.completedSteps = progressData.completedSteps;
+    if (progressData.userPrediction !== undefined) updatePayload.userPrediction = progressData.userPrediction;
+    if (progressData.elaborateProgress !== undefined) updatePayload.elaborateProgress = progressData.elaborateProgress;
+    if (progressData.quizAnswers !== undefined) updatePayload.quizAnswers = progressData.quizAnswers;
+    if (progressData.quizScore !== undefined) updatePayload.quizScore = progressData.quizScore;
+    if (progressData.studentReflection !== undefined) updatePayload.studentReflection = progressData.studentReflection;
+
+    await setDoc(progressDocRef, updatePayload, { merge: true });
 
     return { success: true, mode: 'firestore' };
   } catch (error) {
