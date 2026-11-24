@@ -4,7 +4,6 @@ import {
   getDoc, 
   getDocs,
   collection, 
-  addDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase.js';
@@ -179,6 +178,8 @@ export async function getStudentsFromCloud() {
 
 /**
  * Menyimpan rekapitulasi hasil evaluasi kuis & refleksi siswa ke koleksi 'quiz_results'
+ * Menggunakan doc(db, 'quiz_results', attemptId) dengan setDoc merge untuk menjamin idempotensi
+ * dan menyertakan questionVersion serta rincian butir soal (items)
  */
 export async function saveQuizEvaluationRecord(userId, evaluationData) {
   if (!isFirebaseConfigured() || !db || !userId) {
@@ -186,19 +187,27 @@ export async function saveQuizEvaluationRecord(userId, evaluationData) {
   }
 
   try {
-    const resultsColRef = collection(db, 'quiz_results');
-    const docRef = await addDoc(resultsColRef, {
+    // Kunci deterministik attemptId agar pengiriman ulang tidak menghasilkan duplikat dokumen
+    const attemptId = evaluationData.attemptId || `eval_${userId}_attempt`;
+    const docRef = doc(db, 'quiz_results', attemptId);
+
+    const payload = {
+      attemptId,
       userId,
+      questionVersion: evaluationData.questionVersion || 1,
       studentName: evaluationData.studentName || '',
       studentEmail: evaluationData.studentEmail || '',
       quizScore: evaluationData.quizScore ?? 0,
       quizAnswers: evaluationData.quizAnswers || {},
+      items: evaluationData.items || [],
       userPrediction: evaluationData.userPrediction || null,
       studentReflection: evaluationData.studentReflection || '',
       submittedAt: serverTimestamp()
-    });
+    };
 
-    return { success: true, id: docRef.id, mode: 'firestore' };
+    await setDoc(docRef, payload, { merge: true });
+
+    return { success: true, id: attemptId, mode: 'firestore' };
   } catch (error) {
     console.warn('⚠️ [Firestore] Gagal menyimpan riwayat evaluasi kuis:', error);
     return { success: false, error };

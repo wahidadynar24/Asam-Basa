@@ -15,6 +15,17 @@ export default function Results({
   onReset
 }) {
   const reflectionKey = getUserStorageKey(currentUser?.id, 'student_reflection');
+  const attemptKey = getUserStorageKey(currentUser?.id, 'current_attempt_id');
+
+  const [attemptId] = useState(() => {
+    let id = localStorage.getItem(attemptKey);
+    if (!id) {
+      id = `att_${currentUser?.id || 'guest'}_${Date.now()}`;
+      localStorage.setItem(attemptKey, id);
+    }
+    return id;
+  });
+
   const [reflectionNote, setReflectionNote] = useState(
     () => localStorage.getItem(reflectionKey) || ''
   );
@@ -30,11 +41,23 @@ export default function Results({
     // Simpan ke Cloud Firestore jika terhubung
     if (currentUser?.id && isFirebaseConfigured()) {
       try {
+        const items = QUIZ_QUESTIONS.map(q => {
+          const selectedOption = quizAnswers?.[q.id] || null;
+          return {
+            questionId: q.id,
+            selectedOption,
+            isCorrect: selectedOption === q.correctAnswer
+          };
+        });
+
         await saveQuizEvaluationRecord(currentUser.id, {
+          attemptId,
+          questionVersion: 1,
           studentName: currentUser.name,
           studentEmail: currentUser.email,
           quizScore,
           quizAnswers,
+          items,
           userPrediction,
           studentReflection: reflectionNote
         });

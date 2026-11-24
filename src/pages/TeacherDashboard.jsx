@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAllStudents, getTeacherProfile } from '../utils/auth';
 import { isFirebaseConfigured } from '../services/firebase';
 import { getStudentsFromCloud } from '../services/firestoreService';
+import { QUIZ_QUESTIONS } from '../data/quizData';
 
 export default function TeacherDashboard({ 
   currentUser, 
@@ -71,6 +72,29 @@ export default function TeacherDashboard({
   const averageQuizScore = studentsWithScore.length > 0 
     ? Math.round(studentsWithScore.reduce((acc, st) => acc + (st.quizScore || 0), 0) / studentsWithScore.length)
     : 0;
+
+  // Analisis Daya Serap dan Tingkat Akurasi per Butir Soal Kuis (05-04)
+  const questionItemStats = QUIZ_QUESTIONS.map((q) => {
+    let answeredCount = 0;
+    let correctCount = 0;
+
+    students.forEach((st) => {
+      if (st.quizAnswers && st.quizAnswers[q.id]) {
+        answeredCount++;
+        if (st.quizAnswers[q.id] === q.correctAnswer) {
+          correctCount++;
+        }
+      }
+    });
+
+    const percent = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : null;
+    return {
+      ...q,
+      answeredCount,
+      correctCount,
+      percent
+    };
+  });
 
   // Helper Inisial Avatar
   const getInitials = (name) => {
@@ -384,6 +408,54 @@ export default function TeacherDashboard({
           </section>
         </div>
       </div>
+
+      {/* Rekapitulasi Daya Serap & Akurasi Butir Soal Kuis (05-04) */}
+      <section className="profile-card teacher-item-analysis-card" aria-label="Analisis Daya Serap Butir Soal Kuis" style={{ marginTop: '1.5rem' }}>
+        <div className="card-section-header">
+          <span className="section-header-icon">🎯</span>
+          <div className="header-text-flex">
+            <h2>Analisis Butir Soal &amp; Daya Serap Konsep (Versi Soal: v1.0)</h2>
+            <span className="student-count-badge">10 Butir Evaluasi</span>
+          </div>
+        </div>
+        <p className="card-intro-text">
+          Tinjauan persentase jawaban benar per butir soal untuk mendeteksi konsep kimia asam-basa yang telah dikuasai maupun materi yang membutuhkan penguatan remedial di kelas.
+        </p>
+
+        <div className="quiz-items-analysis-grid">
+          {questionItemStats.map((item) => {
+            const hasData = item.answeredCount > 0;
+            const isHigh = hasData && item.percent >= 75;
+            const isMedium = hasData && item.percent >= 50 && item.percent < 75;
+            const statusClass = !hasData ? 'status-none' : isHigh ? 'status-good' : isMedium ? 'status-medium' : 'status-low';
+            const statusLabel = !hasData ? 'Belum ada data' : isHigh ? 'Dikuasai Baik' : isMedium ? 'Cukup' : 'Perlu Penguatan Konsep';
+
+            return (
+              <div key={item.id} className={`item-analysis-card ${statusClass}`}>
+                <div className="item-analysis-header">
+                  <span className="item-num-badge">Soal {item.id}</span>
+                  <span className={`item-status-pill ${statusClass}`}>{statusLabel}</span>
+                </div>
+                <h4 className="item-topic-title">{item.topic}</h4>
+                <div className="item-percent-display">
+                  <span className="percent-big">{hasData ? `${item.percent}%` : '-'}</span>
+                  <span className="percent-sub">
+                    {hasData ? `${item.correctCount} dari ${item.answeredCount} siswa benar` : 'Menunggu jawaban'}
+                  </span>
+                </div>
+                {hasData && (
+                  <div className="item-progress-track">
+                    <div 
+                      className={`item-progress-fill ${statusClass}`} 
+                      style={{ width: `${item.percent}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* =========================================================================
           MODAL DETAIL AKTIVITAS & REFLEKSI SISWA
