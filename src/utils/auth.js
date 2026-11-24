@@ -25,6 +25,35 @@ const SESSION_STORAGE_KEY = 'chem_auth_session';
 export { AUTHORIZED_TEACHER_EMAILS, isAuthorizedTeacherEmail };
 
 /**
+ * Helper aman menulis ke localStorage (05-05)
+ * Menangani QuotaExceededError dan batasan private browsing
+ */
+export function safeLocalStorageSet(key, value) {
+  try {
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+    localStorage.setItem(key, serialized);
+    return true;
+  } catch (err) {
+    if (err && (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)) {
+      console.warn(`⚠️ [Storage] Kuota penyimpanan terlampaui saat menulis ${key}:`, err);
+    } else {
+      console.warn(`⚠️ [Storage] Gagal menulis ke localStorage (${key}):`, err);
+    }
+    return false;
+  }
+}
+
+export function safeLocalStorageGet(key, fallback = null) {
+  try {
+    const item = localStorage.getItem(key);
+    return item !== null ? item : fallback;
+  } catch (err) {
+    console.warn(`⚠️ [Storage] Gagal membaca dari localStorage (${key}):`, err);
+    return fallback;
+  }
+}
+
+/**
  * Menghasilkan kunci localStorage yang terisolasi dengan namespace per-user / guest
  * Mencegah kebocoran progres belajar antar akun di peramban yang sama
  */
@@ -80,17 +109,15 @@ export function getStudentLocalState(userId) {
  * Menyimpan field spesifik ke storage lokal ber-namespace
  */
 export function setStudentLocalField(userId, key, value) {
-  try {
-    const storageKey = getUserStorageKey(userId, key);
-    if (value === undefined || value === null) {
+  const storageKey = getUserStorageKey(userId, key);
+  if (value === undefined || value === null) {
+    try {
       localStorage.removeItem(storageKey);
-    } else if (typeof value === 'object') {
-      localStorage.setItem(storageKey, JSON.stringify(value));
-    } else {
-      localStorage.setItem(storageKey, String(value));
+    } catch (e) {
+      console.warn('Gagal menghapus key:', e);
     }
-  } catch (e) {
-    console.warn('Gagal menyimpan field lokal siswa:', e);
+  } else {
+    safeLocalStorageSet(storageKey, value);
   }
 }
 
@@ -716,13 +743,21 @@ export async function loginTeacher({ email, password, rememberMe = false }) {
  * Menyimpan sesi pengguna
  */
 export function saveSession(sessionData, rememberMe) {
-  const jsonStr = JSON.stringify(sessionData);
-  if (rememberMe) {
-    localStorage.setItem(SESSION_STORAGE_KEY, jsonStr);
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
-  } else {
-    sessionStorage.setItem(SESSION_STORAGE_KEY, jsonStr);
-    localStorage.removeItem(SESSION_STORAGE_KEY);
+  try {
+    const jsonStr = JSON.stringify(sessionData);
+    if (rememberMe) {
+      safeLocalStorageSet(SESSION_STORAGE_KEY, jsonStr);
+      try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
+    } else {
+      try {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, jsonStr);
+      } catch {
+        safeLocalStorageSet(SESSION_STORAGE_KEY, jsonStr);
+      }
+      try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
+    }
+  } catch (e) {
+    console.warn('Gagal menyimpan sesi:', e);
   }
 }
 

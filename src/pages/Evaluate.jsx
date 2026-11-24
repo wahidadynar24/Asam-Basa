@@ -5,6 +5,7 @@ import NavigationButtons from '../components/NavigationButtons';
 export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswers, quizScore, setQuizScore }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [incompleteWarning, setIncompleteWarning] = useState('');
 
   const currentQuestion = QUIZ_QUESTIONS[currentIndex];
 
@@ -16,6 +17,13 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
   const selectedAnswer = answerSubmitted
     ? submittedAnswer.selected
     : (selectedAnswers[currentQuestion.id] || null);
+
+  // Daftar butir soal yang belum dijawab (05-05)
+  const unansweredQuestionNumbers = QUIZ_QUESTIONS
+    .filter((q) => !quizAnswers[q.id])
+    .map((q) => q.id);
+
+  const isAllAnswered = unansweredQuestionNumbers.length === 0;
 
   // Handler memilih jawaban sementara
   const handleSelectAnswer = (optionId) => {
@@ -40,26 +48,42 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
     };
     setQuizAnswers(updatedAnswers);
 
-    // Hitung ulang total skor (setiap soal bernilai 10 poin, total 100)
+    // Hitung ulang total skor dari total seluruh 10 soal kuis (05-05)
     let correctCount = 0;
-    Object.values(updatedAnswers).forEach((ans) => {
-      if (ans.isCorrect) correctCount++;
+    QUIZ_QUESTIONS.forEach((q) => {
+      const ans = updatedAnswers[q.id];
+      if (ans && ans.isCorrect) correctCount++;
     });
-    setQuizScore(correctCount * 10);
+    setQuizScore(Math.round((correctCount / QUIZ_QUESTIONS.length) * 100));
+    setIncompleteWarning('');
+  };
+
+  // Validasi kelengkapan sebelum menyelesaikan kuis (05-05)
+  const handleFinishQuiz = () => {
+    if (!isAllAnswered) {
+      setIncompleteWarning(
+        `Kuis belum lengkap! Masih terdapat ${unansweredQuestionNumbers.length} soal yang belum dijawab: Nomor ${unansweredQuestionNumbers.join(', ')}. Harap selesaikan seluruh 10 soal sebelum melihat hasil.`
+      );
+      return;
+    }
+    setIncompleteWarning('');
+    onComplete();
   };
 
   // Navigasi soal
   const handleNextQuestion = () => {
     if (currentIndex < QUIZ_QUESTIONS.length - 1) {
       setCurrentIndex(currentIndex + 1);
+      setIncompleteWarning('');
     } else {
-      onComplete();
+      handleFinishQuiz();
     }
   };
 
   const handlePrevQuestion = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
+      setIncompleteWarning('');
     }
   };
 
@@ -204,19 +228,45 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
             {isLastQuestion ? 'Selesai & Lihat Hasil ➔' : 'Soal Berikutnya →'}
           </button>
         </div>
+
+        {/* Peringatan Kuis Belum Lengkap (05-05) */}
+        {incompleteWarning && (
+          <div className="quiz-incomplete-warning-box" role="alert">
+            <span className="warning-icon">⚠️</span>
+            <div className="warning-text-wrap">
+              <strong>Kuis Belum Lengkap!</strong>
+              <p>{incompleteWarning}</p>
+              {unansweredQuestionNumbers.length > 0 && (
+                <button
+                  type="button"
+                  className="btn-jump-unanswered"
+                  onClick={() => {
+                    const firstIdx = QUIZ_QUESTIONS.findIndex(q => q.id === unansweredQuestionNumbers[0]);
+                    if (firstIdx !== -1) {
+                      setCurrentIndex(firstIdx);
+                      setIncompleteWarning('');
+                    }
+                  }}
+                >
+                  Lompat ke Soal Nomor {unansweredQuestionNumbers[0]} ➔
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Navigasi Keluar Kuis */}
       <NavigationButtons
         onPrev={onPrev}
-        onNext={onComplete}
+        onNext={handleFinishQuiz}
         prevLabel="Kembali ke Elaborate"
-        nextLabel={answeredTotal === QUIZ_QUESTIONS.length ? 'Selesai & Lihat Hasil' : 'Lanjut ke Refleksi'}
-        isNextDisabled={answeredTotal < 3} // Minimal jawab 3 soal sebelum bisa lanjut ke refleksi
+        nextLabel="Selesai & Lihat Capaian Belajar"
+        isNextDisabled={!isAllAnswered}
         nextSubtext={
-          answeredTotal < QUIZ_QUESTIONS.length
-            ? `Kamu telah menjawab ${answeredTotal} dari 10 soal.`
-            : 'Semua soal telah selesai dikerjakan!'
+          !isAllAnswered
+            ? `Kamu baru menjawab ${answeredTotal} dari ${QUIZ_QUESTIONS.length} butir soal. (Belum dijawab: No. ${unansweredQuestionNumbers.join(', ')})`
+            : 'Seluruh 10 soal evaluasi tuntas dijawab!'
         }
       />
     </div>

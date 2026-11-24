@@ -9,11 +9,17 @@ const STEPS = [
   { id: 6, label: 'Refleksi & Hasil', title: 'Capaian Belajar', icon: '🏆' },
 ];
 
-export default function ProgressBar({ currentStep, setStep, completedSteps }) {
+export default function ProgressBar({ currentStep, setStep, completedSteps = [] }) {
   if (currentStep === 0) return null; // Sembunyikan di halaman Home pembuka
+
+  // Amankan dari nilai corrupt / null / undefined / non-array (05-05)
+  const safeCompleted = Array.isArray(completedSteps) ? completedSteps : [];
 
   // Hitung persentase progress
   const progressPercent = Math.min(100, Math.round(((currentStep - 1) / (STEPS.length - 1)) * 100));
+
+  const maxCompletedVal = safeCompleted.length > 0 ? Math.max(...safeCompleted) : 0;
+  const maxStepReached = Math.max(1, maxCompletedVal, currentStep || 1);
 
   return (
     <div className="stepper-wrapper">
@@ -27,9 +33,9 @@ export default function ProgressBar({ currentStep, setStep, completedSteps }) {
 
         <div className="stepper-steps">
           {STEPS.map((step) => {
-            const isCompleted = completedSteps.includes(step.id) || currentStep > step.id;
+            const isCompleted = safeCompleted.includes(step.id) || currentStep > step.id;
             const isActive = currentStep === step.id;
-            const isClickable = isCompleted || step.id <= Math.max(1, ...completedSteps, currentStep);
+            const isClickable = isCompleted || step.id <= maxStepReached;
 
             return (
               <button
