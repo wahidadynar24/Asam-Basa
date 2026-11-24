@@ -1,11 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QUIZ_QUESTIONS } from '../data/quizData';
 import NavigationButtons from '../components/NavigationButtons';
+import { getUserStorageKey, safeLocalStorageSet } from '../utils/auth';
 
-export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswers, quizScore, setQuizScore }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
+export default function Evaluate({ 
+  onPrev, 
+  onComplete, 
+  quizAnswers, 
+  setQuizAnswers, 
+  quizScore, 
+  setQuizScore,
+  currentUser 
+}) {
+  const draftKey = getUserStorageKey(currentUser?.id, 'quiz_draft');
+
+  // Pulihkan posisi indeks soal dari draf tersimpan jika ada (05-08)
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.currentIndex === 'number' && parsed.currentIndex >= 0 && parsed.currentIndex < QUIZ_QUESTIONS.length) {
+          return parsed.currentIndex;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return 0;
+  });
+
+  // Pulihkan draf pilihan jawaban sementara yang belum disimpan (05-08)
+  const [selectedAnswers, setSelectedAnswers] = useState(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.selectedAnswers && typeof parsed.selectedAnswers === 'object') {
+          return parsed.selectedAnswers;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return {};
+  });
+
   const [incompleteWarning, setIncompleteWarning] = useState('');
+
+  // Persistensikan draf jawaban belum tersimpan dan indeks soal aktif (05-08)
+  useEffect(() => {
+    try {
+      safeLocalStorageSet(draftKey, {
+        currentIndex,
+        selectedAnswers
+      });
+    } catch (e) {
+      console.warn('Gagal menyimpan draf kuis:', e);
+    }
+  }, [currentIndex, selectedAnswers, draftKey]);
 
   const currentQuestion = QUIZ_QUESTIONS[currentIndex];
 
@@ -56,6 +109,13 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
     });
     setQuizScore(Math.round((correctCount / QUIZ_QUESTIONS.length) * 100));
     setIncompleteWarning('');
+
+    // Hapus draft untuk butir ini karena jawaban sudah resmi disubmit (05-08)
+    setSelectedAnswers((prev) => {
+      const updated = { ...prev };
+      delete updated[currentQuestion.id];
+      return updated;
+    });
   };
 
   // Validasi kelengkapan sebelum menyelesaikan kuis (05-05)
@@ -67,6 +127,11 @@ export default function Evaluate({ onPrev, onComplete, quizAnswers, setQuizAnswe
       return;
     }
     setIncompleteWarning('');
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // ignore
+    }
     onComplete();
   };
 

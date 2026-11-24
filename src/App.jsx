@@ -519,6 +519,7 @@ export default function App() {
                 setQuizAnswers={setQuizAnswers}
                 quizScore={quizScore}
                 setQuizScore={setQuizScore}
+                currentUser={currentUser}
               />
             )}
             {currentStep === 6 && (
@@ -687,6 +688,7 @@ export default function App() {
                 setQuizAnswers={setQuizAnswers}
                 quizScore={quizScore}
                 setQuizScore={setQuizScore}
+                currentUser={currentUser}
               />
             )}
 
