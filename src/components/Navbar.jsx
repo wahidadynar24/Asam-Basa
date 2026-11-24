@@ -71,12 +71,12 @@ export default function Navbar({
               <div className="user-info-text">
                 <span className="user-name-display">{currentUser.name}</span>
                 <div className="user-meta-tags">
-                  <span className="user-role-tag">Profil Siswa</span>
+                  <span className="user-role-tag">{currentUser.isGuest ? 'Mode Tamu' : 'Profil Siswa'}</span>
                   <span 
-                    className={`cloud-status-tag ${isCloudConnected ? 'connected' : 'offline'}`}
-                    title={isCloudConnected ? 'Tersinkron ke Firebase Cloud' : 'Mode Penyimpanan Lokal'}
+                    className={`cloud-status-tag ${(!currentUser.isGuest && isCloudConnected) ? 'connected' : 'offline'}`}
+                    title={(!currentUser.isGuest && isCloudConnected) ? 'Tersinkron ke Firebase Cloud' : 'Mode Penyimpanan Lokal'}
                   >
-                    {isCloudConnected ? '☁️ Cloud' : '💾 Lokal'}
+                    {(!currentUser.isGuest && isCloudConnected) ? '☁️ Cloud' : '💾 Lokal'}
                   </span>
                 </div>
               </div>
@@ -101,10 +101,10 @@ export default function Navbar({
               type="button" 
               className="btn-icon btn-logout" 
               onClick={onLogout}
-              title="Keluar dari akun Chemify"
+              title={currentUser.isGuest ? "Selesai Sesi Tamu" : "Keluar dari akun Chemify"}
             >
               <span className="btn-icon-symbol">🚪</span>
-              <span className="btn-label-mobile-hide">Keluar</span>
+              <span className="btn-label-mobile-hide">{currentUser.isGuest ? "Selesai Tamu" : "Keluar"}</span>
             </button>
           )}
         </div>

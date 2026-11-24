@@ -103,6 +103,20 @@ export default function Results({
         </p>
       </div>
 
+      {/* Banner Edukatif Mode Tamu (05-06) */}
+      {currentUser?.isGuest && (
+        <div className="guest-cloud-notice-card" role="status">
+          <div className="notice-icon">💡</div>
+          <div className="notice-content">
+            <h4>Belajar dalam Mode Tamu</h4>
+            <p>
+              Hasil evaluasi kuis dan catatan refleksi kamu tersimpan secara lokal di peramban perangkat ini. 
+              Daftar akun atau masuk kapan saja untuk menyimpan capaian belajarmu secara permanen ke Cloud dan terhubung dengan penilaian guru.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Bagian Skor Kuis Utama */}
       <section className="results-hero-card">
         <div className="score-circle-wrap">

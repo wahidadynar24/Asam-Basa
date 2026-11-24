@@ -96,7 +96,8 @@ export default function App() {
 
   // ROLE-BASED ACCESS CONTROL (RBAC) GUARDS:
   const isTeacher = currentUser?.role === 'teacher';
-  const isStudent = currentUser && !isTeacher;
+  const isGuest = Boolean(currentUser?.isGuest);
+  const isStudent = (currentUser && !isTeacher) || isGuest;
   const isTeacherRoute = currentPath.startsWith('/guru');
 
   // Isolasi State & Sinkronisasi Data Kemajuan Belajar Siswa (05-03)
@@ -281,10 +282,17 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handler Logout Siswa
+  // Handler Logout Siswa / Tamu
   const handleLogout = async () => {
-    if (window.confirm(`Hai ${currentUser?.name || 'Siswa'}, apakah kamu yakin ingin keluar dari akun Chemify?`)) {
-      await logoutUser();
+    const isGuestUser = Boolean(currentUser?.isGuest);
+    const confirmMsg = isGuestUser
+      ? 'Apakah kamu ingin mengakhiri sesi belajar sebagai tamu? Progress lokal di perangkat ini tetap tersimpan.'
+      : `Hai ${currentUser?.name || 'Siswa'}, apakah kamu yakin ingin keluar dari akun Chemify?`;
+
+    if (window.confirm(confirmMsg)) {
+      if (!isGuestUser) {
+        await logoutUser();
+      }
       // Kosongkan state memori segera
       isStateLoadedForUserRef.current = null;
       const defaults = getDefaultStudentState();

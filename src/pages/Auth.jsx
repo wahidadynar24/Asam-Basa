@@ -52,6 +52,18 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
     setSuccessMessage('');
   };
 
+  // Handler Akses Mode Tamu (05-06: Belajar sebagai Tamu)
+  const handleGuestLogin = () => {
+    const guestSession = {
+      id: null,
+      name: 'Siswa Tamu',
+      email: '',
+      role: 'student',
+      isGuest: true
+    };
+    onLoginSuccess(guestSession);
+  };
+
   // Handler Submit Login
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -612,6 +624,31 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
               </div>
             </form>
           )}
+
+          {/* Opsi Akses Belajar sebagai Tamu (05-06) */}
+          <div className="auth-guest-section">
+            <div className="auth-divider">
+              <span className="divider-line" />
+              <span className="divider-text">ATAU</span>
+              <span className="divider-line" />
+            </div>
+
+            <button
+              type="button"
+              className="btn-guest-learning"
+              onClick={handleGuestLogin}
+              title="Coba langsung modul pembelajaran tanpa membuat akun"
+            >
+              <div className="guest-btn-content">
+                <span className="guest-badge-pill">Eksplorasi Langsung</span>
+                <strong className="guest-main-title">Belajar sebagai Tamu</strong>
+                <span className="guest-sub-text">
+                  Akses instan seluruh alur 5E &amp; laboratorium virtual pH tanpa mendaftar akun
+                </span>
+              </div>
+              <span className="guest-chevron">→</span>
+            </button>
+          </div>
         </div>
 
         {/* Security & Privacy Notice */}

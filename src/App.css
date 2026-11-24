@@ -6702,3 +6702,115 @@
 .item-progress-fill.status-low {
   background: #ef4444;
 }
+
+/* Guest Learning Mode Components (05-06) */
+.auth-guest-section {
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.divider-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.btn-guest-learning {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.btn-guest-learning:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+  transform: translateY(-1px);
+}
+
+.guest-btn-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.guest-badge-pill {
+  align-self: flex-start;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #166534;
+  background: #dcfce7;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.guest-main-title {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.guest-sub-text {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.guest-chevron {
+  font-size: 1.25rem;
+  color: #0284c7;
+  font-weight: bold;
+  margin-left: 0.75rem;
+}
+
+.guest-cloud-notice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.guest-cloud-notice-card .notice-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.guest-cloud-notice-card .notice-content h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.guest-cloud-notice-card .notice-content p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #3b82f6;
+  line-height: 1.45;
+}
