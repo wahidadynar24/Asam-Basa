@@ -89,7 +89,11 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
         rememberMe
       });
 
-      setSuccessMessage(`Selamat datang kembali, ${session.name}! Mengarahkan ke modul pembelajaran...`);
+      const isTeacher = session.role === 'teacher';
+      const redirectMsg = isTeacher 
+        ? 'Mengarahkan ke Dashboard Guru...' 
+        : 'Mengarahkan ke modul pembelajaran...';
+      setSuccessMessage(`Selamat datang kembali, ${session.name}! ${redirectMsg}`);
       setTimeout(() => {
         onLoginSuccess(session);
       }, 700);
@@ -702,11 +706,11 @@ export default function Auth({ onLoginSuccess, initialMode = 'login' }) {
               type="button"
               className="btn-guest-learning"
               onClick={handleGuestLogin}
-              title="Coba langsung modul pembelajaran tanpa membuat akun"
+              title="Masuk sebagai Tamu: coba langsung modul pembelajaran tanpa membuat akun"
             >
               <div className="guest-btn-content">
-                <span className="guest-badge-pill">Eksplorasi Langsung</span>
-                <strong className="guest-main-title">Belajar sebagai Tamu</strong>
+                <span className="guest-badge-pill">Mode Tanpa Akun</span>
+                <strong className="guest-main-title">Masuk sebagai Tamu</strong>
                 <span className="guest-sub-text">
                   Akses instan seluruh alur 5E &amp; laboratorium virtual pH tanpa mendaftar akun
                 </span>

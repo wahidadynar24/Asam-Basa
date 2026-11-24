@@ -47,15 +47,19 @@ CHEMIFY dibangun menggunakan arsitektur **Single Page Application (SPA)** berbas
 Sistem membedakan tiga tingkatan peran pengguna:
 1. **Teacher (Pendidik):**
    - Hak akses eksklusif ke Portal Guru (`/guru`, `/guru/profil`, `/guru/dashboard`).
-   - Email pengampu ditetapkan secara permanen pada: `karenina.zulfa.2403316@students.um.ac.id`.
-   - Penetapan peran dilakukan di lapisan data pengguna (`role: 'teacher'`).
+   - Email pengampu diverifikasi terhadap whitelist resmi: `karenina.zulfa.2403316@students.um.ac.id` (dan fallback sistem `guru@chemify.edu`).
+   - Penetapan peran dilakukan di lapisan data pengguna (`role: 'teacher'`) dan dijaga ketat agar tidak dapat ditingkatkan oleh pengguna biasa (*role tampering prevention*).
+   - Setelah login melalui formulir terpadu (tanpa banner portal terpisah), sistem secara otomatis mengarahkan pendidik ke Teacher Dashboard (`/guru/dashboard`).
 2. **Student (Siswa):**
    - Seluruh akun baru yang mendaftar secara default memperoleh `role: 'student'`.
+   - Setelah login, diarahkan secara otomatis ke Student Dashboard / Modul Pembelajaran 5E (`/`).
    - Mengakses alur pembelajaran 5E, pengerjaan kuis, dan pengisian refleksi.
    - Dilarang keras mengakses `/guru`. Jika siswa mencoba mengakses URL tersebut secara langsung, komponen `App.jsx` memblokir akses dan merender layar **403 Forbidden Access** (`.access-denied-layout`).
 3. **Guest (Pengguna Tamu):**
-   - Siswa yang memilih "Belajar sebagai Tamu" tanpa mendaftar akun (`isGuest: true`).
+   - Siswa yang memilih "Masuk sebagai Tamu" tanpa mendaftar akun (`isGuest: true`, `role: 'guest'`).
+   - Sesi disimpan secara aman di `sessionStorage` (bukan `localStorage`), dan kunci data terisolasi dalam *namespace* `chem_guest_*`.
    - Dapat mengakses penuh alur materi 5E dan simulasi laboratorium virtual.
+   - **Defense-in-Depth Cloud Guard:** Fungsi Firestore `saveUserProfile`, `saveStudentProgress`, dan `saveQuizEvaluationRecord` serta debounced sync di `App.jsx` secara ketat menolak pengiriman data tamu ke cloud Firebase Firestore.
    - Akses ke `/guru` diblokir total.
 
 ---

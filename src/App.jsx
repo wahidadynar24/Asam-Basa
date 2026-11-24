@@ -10,7 +10,6 @@ import Evaluate from './pages/Evaluate';
 import Results from './pages/Results';
 import Auth from './pages/Auth';
 import Profile from './pages/Profile';
-import TeacherAuth from './pages/TeacherAuth';
 import TeacherProfile from './pages/TeacherProfile';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherNavbar from './components/TeacherNavbar';
@@ -231,9 +230,9 @@ export default function App() {
 
   // Sinkronisasi kemajuan belajar siswa ke Cloud Firestore (Debounced)
   useEffect(() => {
-    // Pastikan state sudah benar-benar selesai dimuat untuk user ini
-    // Jangan pernah sync jika user belum terautentikasi atau data belum selesai dimuat
-    if (!currentUser?.id || isTeacher || isStateLoadedForUserRef.current !== currentUser.id) return;
+    // Pastikan user adalah siswa terdaftar dan bukan tamu
+    // Jangan pernah sync jika user belum terautentikasi, tamu, atau data belum selesai dimuat
+    if (!currentUser?.id || currentUser?.isGuest || isTeacher || isStateLoadedForUserRef.current !== currentUser.id) return;
 
     const studentReflection = localStorage.getItem(getUserStorageKey(currentUser.id, 'student_reflection')) || '';
 
@@ -254,7 +253,7 @@ export default function App() {
     saveStudentProgressToLocal(currentUser.id, progressPayload);
 
     // Sinkronkan ke Cloud Firestore jika Firebase aktif (Debounced)
-    if (isFirebaseConfigured()) {
+    if (isFirebaseConfigured() && currentUser?.id && !currentUser?.isGuest) {
       const syncTimeout = setTimeout(() => {
         saveStudentProgress(currentUser.id, progressPayload);
       }, 1200);
@@ -266,19 +265,14 @@ export default function App() {
   const handleLoginSuccess = (userSession) => {
     setCurrentUser(userSession);
     setIsProfileView(false);
+    setIsTeacherPreviewingStudent(false);
     if (userSession.role === 'teacher') {
       navigate('/guru/dashboard');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setCurrentStep(0);
     navigate('/');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Handler Sukses Login Guru (RBAC Auto-Routing ke Teacher Dashboard)
-  const handleTeacherLoginSuccess = (teacherSession) => {
-    setCurrentUser(teacherSession);
-    navigate('/guru/dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -362,8 +356,8 @@ export default function App() {
       setElaborateProgress({});
       setQuizAnswers({});
       setQuizScore(0);
-      // Sinkronkan reset ke Cloud Firestore jika aktif
-      if (currentUser?.id && isFirebaseConfigured()) {
+      // Sinkronkan reset ke Cloud Firestore jika aktif dan bukan akun tamu
+      if (currentUser?.id && !currentUser?.isGuest && isFirebaseConfigured()) {
         saveStudentProgress(currentUser.id, {
           userName: currentUser.name,
           userEmail: currentUser.email,
@@ -410,36 +404,8 @@ export default function App() {
   // KASUS 1: BELUM TERAUTENTIKASI (UNAUTHENTICATED)
   // =========================================================================
   if (!currentUser) {
-    // Jika mengakses URL portal guru: /guru/login atau /guru/register atau /guru/profil
-    if (isTeacherRoute) {
-      return (
-        <div className="app-layout auth-layout">
-          <TeacherAuth 
-            key={currentPath.includes('register') ? 'register' : 'login'}
-            onLoginSuccess={handleTeacherLoginSuccess} 
-            onNavigate={navigate}
-            initialMode={currentPath.includes('register') ? 'register' : 'login'}
-          />
-        </div>
-      );
-    }
-
-    // Jika mengakses halaman utama: Tampilkan Auth siswa (unmodified) + Switcher Banner
     return (
       <div className="app-layout auth-layout">
-        {/* Floating Switcher Link ke Portal Guru tanpa mengubah komponen Auth.jsx */}
-        <div className="portal-switcher-top-banner">
-          <span className="portal-banner-icon">👨‍🏫</span>
-          <span className="portal-banner-text">Apakah Anda seorang Pendidik atau Guru Kimia?</span>
-          <button 
-            type="button" 
-            className="portal-banner-btn" 
-            onClick={() => navigate('/guru/login')}
-          >
-            Masuk Portal Guru di Sini →
-          </button>
-        </div>
-
         <Auth onLoginSuccess={handleLoginSuccess} />
       </div>
     );

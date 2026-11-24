@@ -58,7 +58,8 @@ export function safeLocalStorageGet(key, fallback = null) {
  * Mencegah kebocoran progres belajar antar akun di peramban yang sama
  */
 export function getUserStorageKey(userId, key) {
-  const prefix = userId ? `chem_${userId}_` : 'chem_guest_';
+  const isGuest = !userId || userId === 'guest';
+  const prefix = isGuest ? 'chem_guest_' : `chem_${userId}_`;
   return `${prefix}${key}`;
 }
 
@@ -745,6 +746,15 @@ export async function loginTeacher({ email, password, rememberMe = false }) {
 export function saveSession(sessionData, rememberMe) {
   try {
     const jsonStr = JSON.stringify(sessionData);
+    if (sessionData?.isGuest) {
+      try {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, jsonStr);
+      } catch {
+        safeLocalStorageSet(SESSION_STORAGE_KEY, jsonStr);
+      }
+      try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
+      return;
+    }
     if (rememberMe) {
       safeLocalStorageSet(SESSION_STORAGE_KEY, jsonStr);
       try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
@@ -889,7 +899,7 @@ export function getUserProfile(userId) {
  * Menyimpan data kemajuan belajar siswa ke storage lokal per-user
  */
 export function saveStudentProgressToLocal(userId, progressData) {
-  if (!userId) return;
+  if (!userId || userId === 'guest' || progressData?.isGuest) return;
   try {
     const existingRaw = localStorage.getItem(`chem_progress_${userId}`);
     const existing = existingRaw ? JSON.parse(existingRaw) : {};
@@ -924,18 +934,24 @@ export function updateUserProfile(userId, profileData) {
   const users = getRegisteredUsers();
   const index = users.findIndex(u => u.id === userId);
 
+  // Jangan pernah izinkan pengguna mengubah role mereka sendiri
+  const existingUser = index !== -1 ? users[index] : null;
+  const safeRole = (existingUser?.role === 'teacher' || isAuthorizedTeacherEmail(existingUser?.email))
+    ? 'teacher'
+    : 'student';
+
   const updatedUser = {
-    ...(index !== -1 ? users[index] : {}),
+    ...(existingUser || {}),
     id: userId,
     name: trimmedName,
-    photoUrl: profileData.photoUrl !== undefined ? profileData.photoUrl : (index !== -1 ? users[index].photoUrl : ''),
+    photoUrl: profileData.photoUrl !== undefined ? profileData.photoUrl : (existingUser?.photoUrl || ''),
     school: trimmedSchool,
     educationLevel: profileData.educationLevel,
     grade: profileData.grade,
     major: trimmedMajor,
     attendanceNumber: (profileData.attendanceNumber || '').trim(),
     bio: (profileData.bio || '').trim(),
-    role: 'student',
+    role: safeRole,
     updatedAt: new Date().toISOString()
   };
 

@@ -29,9 +29,10 @@ Sistem pengujian otomatis CHEMIFY dibangun menggunakan:
 | **05-08** | `tests/05-08-quiz-draft.test.jsx` | 2 | Persistensi instan draf jawaban kuis dan indeks nomor soal; pemulihan draf otomatis saat browser dimuat ulang (*refresh*); perlindungan kunci jawaban tetap tersembunyi. | **LULUS** (2/2) |
 | **05-09** | `tests/05-09-a11y.test.jsx` | 2 | Aksesibilitas keyboard tombol radio prediksi Engage (`tabIndex={0}`, fokus tombol Tab); modal lupa kata sandi dengan atribut `role="dialog"`, `aria-modal="true"`, dan *focus trap*. | **LULUS** (2/2) |
 | **05-10** | `tests/05-10-viewport-375.test.jsx` | 3 | Kontainer `.table-responsive` memiliki `overflow-x: auto` dan `max-width: 100%`; aturan media query seluler $\le 480\text{px}$ pada filter bar dan grid; modal bebas overflow pada 375px. | **LULUS** (3/3) |
+| **Auth-RBAC** | `tests/auth-rbac-flows.test.jsx` | 6 | Autentikasi terpadu: penghapusan banner portal guru, auto-routing guru ke `/guru/dashboard`, auto-routing murid ke `/`, proteksi role tampering di client & cloud, isolasi data tamu & penolakan simpan Firestore untuk tamu. | **LULUS** (6/6) |
 
-**Total Skenario Uji:** **28 Skenario**  
-**Tingkat Keberhasilan:** **100% Lulus (28/28 Passed)**
+**Total Skenario Uji:** **34 Skenario**  
+**Tingkat Keberhasilan:** **100% Lulus (34/34 Passed)**
 
 ---
 

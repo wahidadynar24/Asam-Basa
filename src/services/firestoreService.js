@@ -25,14 +25,28 @@ export function isAuthorizedTeacherEmail(email) {
  * Menyimpan profil pengguna ke Firestore dengan validasi Role aman (RBAC)
  */
 export async function saveUserProfile(userId, profileData) {
-  if (!isFirebaseConfigured() || !db || !userId) {
-    return { success: false, mode: 'local' };
+  if (!isFirebaseConfigured() || !db || !userId || userId === 'guest' || profileData?.isGuest) {
+    return { success: false, mode: 'local', reason: 'guest_or_offline' };
   }
 
   try {
     const userEmail = (profileData.email || '').trim().toLowerCase();
-    // Penetapan role aman di backend: jika email guru resmi -> teacher, default -> student
-    const assignedRole = isAuthorizedTeacherEmail(userEmail) ? 'teacher' : (profileData.role === 'teacher' && isAuthorizedTeacherEmail(userEmail) ? 'teacher' : 'student');
+    
+    // Periksa role yang sudah ada di Firestore untuk mencegah pengguna mengubah role sendiri
+    let existingRole = null;
+    try {
+      const existingSnap = await getDoc(doc(db, 'users', userId));
+      if (existingSnap.exists()) {
+        existingRole = existingSnap.data().role;
+      }
+    } catch {
+      // ignore network errors
+    }
+
+    // Penetapan role aman di backend: role hanya teacher jika email guru resmi atau role di Firestore sudah teacher
+    const assignedRole = (existingRole === 'teacher' || isAuthorizedTeacherEmail(userEmail)) 
+      ? 'teacher' 
+      : 'student';
 
     const userDocRef = doc(db, 'users', userId);
     await setDoc(userDocRef, {
@@ -65,8 +79,8 @@ export async function saveUserProfile(userId, profileData) {
  * @param {object} progressData - Data kemajuan belajar 5E
  */
 export async function saveStudentProgress(userId, progressData = {}) {
-  if (!isFirebaseConfigured() || !db || !userId) {
-    return { success: false, mode: 'local' };
+  if (!isFirebaseConfigured() || !db || !userId || userId === 'guest' || progressData?.isGuest) {
+    return { success: false, mode: 'local', reason: 'guest_or_offline' };
   }
 
   try {
@@ -181,9 +195,9 @@ export async function getStudentsFromCloud() {
  * Menggunakan doc(db, 'quiz_results', attemptId) dengan setDoc merge untuk menjamin idempotensi
  * dan menyertakan questionVersion serta rincian butir soal (items)
  */
-export async function saveQuizEvaluationRecord(userId, evaluationData) {
-  if (!isFirebaseConfigured() || !db || !userId) {
-    return { success: false, mode: 'local' };
+export async function saveQuizEvaluationRecord(userId, evaluationData = {}) {
+  if (!isFirebaseConfigured() || !db || !userId || userId === 'guest' || evaluationData?.isGuest) {
+    return { success: false, mode: 'local', reason: 'guest_or_offline' };
   }
 
   try {

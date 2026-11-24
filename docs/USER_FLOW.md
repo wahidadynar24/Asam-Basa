@@ -8,17 +8,17 @@ Dokumen ini memetakan seluruh alur interaksi pengguna (*user journey*), diagram 
 
 ```mermaid
 flowchart TD
-    Start([Pengguna Masuk ke Website CHEMIFY]) --> Choice{Pilihan Masuk}
+    Start([Pengguna Masuk ke Website CHEMIFY]) --> Choice{Pilihan Akses}
     
-    Choice -->|Klik 'Belajar sebagai Tamu'| GuestMode[Mode Belajar Tamu]
-    Choice -->|Sudah Memiliki Akun| Login[Halaman Login]
-    Choice -->|Pengguna Baru| Register[Halaman Registrasi]
+    Choice -->|Klik 'Masuk sebagai Tamu'| GuestMode[Mode Belajar Tamu (Local Storage Only)]
+    Choice -->|Sudah Memiliki Akun| Login[Halaman Login Terpadu (Tanpa Banner Khusus)]
+    Choice -->|Pengguna Baru| Register[Halaman Registrasi (Default Role: Student)]
     
-    Register -->|Validasi Sukses| Login
+    Register -->|Registrasi Sukses| Login
     
-    Login --> AuthCheck{Autentikasi & Verifikasi Role}
+    Login --> AuthCheck{Autentikasi & Verifikasi Role Firebase}
     AuthCheck -->|Role: Student| StudentDash[Dashboard Siswa / Modul 5E]
-    AuthCheck -->|Role: Teacher| TeacherDash[Portal Guru / Dashboard Pendidik]
+    AuthCheck -->|Role: Teacher (Auto-Detect Email/Firestore)| TeacherDash[Portal Guru / Dashboard Pendidik]
     
     GuestMode --> Stage1[Tahap 1: Engage]
     StudentDash --> Stage1
@@ -36,7 +36,7 @@ flowchart TD
     SubmitQuiz --> Results[Halaman Hasil & Refleksi Belajar]
     Results --> SaveRef{Simpan Refleksi}
     
-    SaveRef -->|Pengguna Tamu| LocalSave[Disimpan di LocalStorage chem_guest_*]
+    SaveRef -->|Pengguna Tamu (Ditolak dari Cloud)| LocalSave[Hanya Disimpan di LocalStorage chem_guest_*]
     SaveRef -->|Siswa Terdaftar| CloudSync[Sinkronisasi Cloud Firestore]
     
     LocalSave --> TamuPrompt[Banner Ajakan Registrasi Akun]
@@ -48,14 +48,16 @@ flowchart TD
 ## 👤 2. Rincian Alur Berdasarkan Peran Pengguna
 
 ### A. Alur Pengguna Tamu (Mode Belajar Tanpa Login Awal — 05-06)
-1. **Titik Masuk:** Pengguna mengakses halaman beranda atau halaman login.
-2. **Pilihan Tamu:** Pengguna mengeklik tombol *"Belajar sebagai Tamu (Guest Mode)"*.
+1. **Titik Masuk:** Pengguna mengakses halaman beranda atau halaman login terpadu.
+2. **Pilihan Tamu:** Pengguna mengeklik tombol *"Masuk sebagai Tamu"* (dengan penanda mode tanpa akun).
 3. **Inisialisasi Sesi:**
    - Sesi disetel dengan `isGuest: true`, `name: 'Siswa Tamu'`, dan `role: 'guest'`.
+   - Sesi disimpan secara aman di `sessionStorage` (tanpa jejak akun di `localStorage`).
    - Kunci penyimpanan lokal menggunakan *namespace* terpisah: `chem_guest_*`.
 4. **Pembelajaran 5E:** Pengguna tamu dapat mengakses seluruh tahapan 5E dan simulasi laboratorium virtual tanpa hambatan.
-5. **Halaman Hasil:**
-   - Draf dan hasil kuis disimpan di penyimpanan lokal perangkat.
+5. **Halaman Hasil & Proteksi Data Cloud:**
+   - Draf dan hasil kuis disimpan di penyimpanan lokal perangkat (`chem_guest_*`).
+   - Seluruh data tamu (progres, refleksi, evaluasi kuis) diblokir dari pengiriman atau penyimpanan ke Firebase Firestore.
    - Ditampilkan banner edukatif: *"Anda sedang belajar dalam Mode Tamu. Progres Anda tersimpan di peramban ini. Daftarkan akun untuk menyimpan portofolio belajar permanen."*
 6. **Proteksi:** Jika pengguna tamu mencoba membuka `/guru`, sistem langsung memblokir dan menampilkan layar *403 Forbidden*.
 
@@ -82,9 +84,9 @@ flowchart TD
 
 ### C. Alur Pendidik / Guru (Teacher Role)
 1. **Login Guru:** Pengguna masuk menggunakan email guru:
-   `karenina.zulfa.2403316@students.um.ac.id`.
-2. **Verifikasi RBAC:** Sistem memeriksa kecocokan email dan atribut `role === 'teacher'`.
-3. **Pengalihan Otomatis:** Setelah berhasil login, guru langsung diarahkan ke **Teacher Dashboard** (`/guru`).
+   `karenina.zulfa.2403316@students.um.ac.id` melalui form login terpadu. Banner/tombol terpisah "Portal Guru" telah dihapus dari halaman login dan registrasi agar autentikasi berlangsung terpusat.
+2. **Verifikasi RBAC:** Sistem memeriksa kecocokan email dan atribut `role === 'teacher'` di Firebase/database.
+3. **Pengalihan Otomatis:** Setelah berhasil login, guru langsung diarahkan secara otomatis ke **Teacher Dashboard** (`/guru/dashboard`).
 4. **Aktivitas di Teacher Dashboard:**
    - **Ringkasan Statistik:** Memantau total siswa terdaftar, rata-rata skor kuis, dan jumlah siswa yang tuntas 5 tahap 5E.
    - **Tabel Monitoring Siswa:**
