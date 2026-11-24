@@ -53,14 +53,14 @@ export const QUIZ_QUESTIONS = [
     topic: 'Hubungan pH dan pOH',
     question: 'Suatu sampel cairan pembersih diketahui memiliki nilai pOH sebesar 3,00 pada suhu 25°C. Karakteristik larutan tersebut adalah...',
     options: [
-      { id: 'a', text: 'Larutan memiliki nilai pH = 11,00 dan bersifat basa kuat.' },
-      { id: 'b', text: 'Larutan memiliki nilai pH = 11,00 dan bersifat asam kuat.' },
-      { id: 'c', text: 'Larutan memiliki nilai pH = 3,00 serta bersifat asam lemah.' },
-      { id: 'd', text: 'Larutan memiliki nilai pH = 7,00 serta bersifat netral murni.' },
-      { id: 'e', text: 'Larutan memiliki nilai pH = 4,00 serta bersifat amfoterik air.' }
+      { id: 'a', text: 'Larutan memiliki nilai pH = 11,00 dan bersifat basa.' },
+      { id: 'b', text: 'Larutan memiliki nilai pH = 11,00 dan bersifat asam.' },
+      { id: 'c', text: 'Larutan memiliki nilai pH = 3,00 serta bersifat asam.' },
+      { id: 'd', text: 'Larutan memiliki nilai pH = 7,00 serta bersifat netral.' },
+      { id: 'e', text: 'Larutan memiliki nilai pH = 4,00 serta bersifat amfoter.' }
     ],
     correctAnswer: 'a',
-    explanation: 'Pada suhu 25°C berlaku rumus mutlak pH + pOH = 14. Maka nilai pH = 14 - pOH = 14 - 3,00 = 11,00. Karena pH = 11,00 (> 7), larutan tersebut bersifat basa.'
+    explanation: 'Pada suhu 25°C berlaku hubungan pH + pOH = 14. Maka nilai pH = 14 - pOH = 14 - 3,00 = 11,00. Karena pH = 11,00 (> 7), larutan tersebut bersifat basa. Nilai pOH saja tanpa informasi konsentrasi awal zat tidak dapat menentukan apakah larutan merupakan basa kuat atau basa lemah.'
   },
   {
     id: 5,
