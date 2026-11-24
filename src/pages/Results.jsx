@@ -29,53 +29,82 @@ export default function Results({
   const [reflectionNote, setReflectionNote] = useState(
     () => localStorage.getItem(reflectionKey) || ''
   );
-  const [reflectionSaved, setReflectionSaved] = useState(
-    () => Boolean(localStorage.getItem(reflectionKey))
-  );
+  // Status sinkronisasi (05-07): 'idle' | 'local_only' | 'pending' | 'success' | 'failed'
+  const [syncStatus, setSyncStatus] = useState(() => {
+    return localStorage.getItem(reflectionKey) ? 'local_only' : 'idle';
+  });
+  const [syncError, setSyncError] = useState('');
   const [showReview, setShowReview] = useState(false);
 
   const handleSaveReflection = async () => {
+    // 1. Simpan selalu ke storage lokal terlebih dahulu
     localStorage.setItem(reflectionKey, reflectionNote);
-    setReflectionSaved(true);
 
-    // Simpan ke Cloud Firestore jika terhubung
-    if (currentUser?.id && isFirebaseConfigured()) {
-      try {
-        const items = QUIZ_QUESTIONS.map(q => {
-          const selectedOption = quizAnswers?.[q.id] || null;
-          return {
-            questionId: q.id,
-            selectedOption,
-            isCorrect: selectedOption === q.correctAnswer
-          };
-        });
+    // Jika mode tamu atau Firebase belum dikonfigurasi: status tersimpan lokal
+    if (!currentUser?.id || currentUser?.isGuest || !isFirebaseConfigured()) {
+      setSyncStatus('local_only');
+      setSyncError('');
+      return;
+    }
 
-        await saveQuizEvaluationRecord(currentUser.id, {
-          attemptId,
-          questionVersion: 1,
-          studentName: currentUser.name,
-          studentEmail: currentUser.email,
-          quizScore,
-          quizAnswers,
-          items,
-          userPrediction,
-          studentReflection: reflectionNote
-        });
+    // 2. Status Menunggu Pengiriman ke Cloud
+    setSyncStatus('pending');
+    setSyncError('');
 
-        await saveStudentProgress(currentUser.id, {
-          userName: currentUser.name,
-          userEmail: currentUser.email,
-          currentStep: 6,
-          completedSteps: completedSteps && completedSteps.length > 0 ? completedSteps : [1, 2, 3, 4, 5],
-          quizScore,
-          quizAnswers,
-          userPrediction,
-          elaborateProgress,
-          studentReflection: reflectionNote
-        });
-      } catch (err) {
-        console.warn('Gagal menyimpan refleksi ke Firestore:', err);
+    try {
+      const items = QUIZ_QUESTIONS.map(q => {
+        const selectedOption = quizAnswers?.[q.id] || null;
+        return {
+          questionId: q.id,
+          selectedOption,
+          isCorrect: selectedOption === q.correctAnswer
+        };
+      });
+
+      const resQuiz = await saveQuizEvaluationRecord(currentUser.id, {
+        attemptId,
+        questionVersion: 1,
+        studentName: currentUser.name,
+        studentEmail: currentUser.email,
+        quizScore,
+        quizAnswers,
+        items,
+        userPrediction,
+        studentReflection: reflectionNote
+      });
+
+      const resProg = await saveStudentProgress(currentUser.id, {
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        currentStep: 6,
+        completedSteps: completedSteps && completedSteps.length > 0 ? completedSteps : [1, 2, 3, 4, 5],
+        quizScore,
+        quizAnswers,
+        userPrediction,
+        elaborateProgress,
+        studentReflection: reflectionNote
+      });
+
+      // Verifikasi eksplisit keberhasilan dari Firestore Service
+      if (resQuiz?.success && resProg?.success) {
+        // 3. Status Berhasil Diterima Layanan
+        setSyncStatus('success');
+        setSyncError('');
+      } else {
+        // 4. Status Gagal (ditolak atau error internal)
+        const err = resQuiz?.error || resProg?.error;
+        const msg = (err?.code === 'permission-denied' || (typeof err?.message === 'string' && err.message.includes('permission-denied')))
+          ? 'Izin ditolak oleh aturan keamanan Firestore (Permission Denied). Pastikan kamu telah masuk dengan akun yang sah.'
+          : (err?.message || 'Layanan Cloud menolak penyimpanan. Periksa koneksi internet kamu.');
+        setSyncStatus('failed');
+        setSyncError(msg);
       }
+    } catch (err) {
+      const msg = (err?.code === 'permission-denied' || (typeof err?.message === 'string' && err.message.includes('permission-denied')))
+        ? 'Izin ditolak oleh aturan keamanan Firestore (Permission Denied).'
+        : (err?.message || 'Terjadi gangguan jaringan saat menghubungi Cloud Firestore.');
+      setSyncStatus('failed');
+      setSyncError(msg);
     }
   };
 
@@ -223,24 +252,65 @@ export default function Results({
             value={reflectionNote}
             onChange={(e) => {
               setReflectionNote(e.target.value);
-              setReflectionSaved(false);
+              setSyncStatus('idle');
+              setSyncError('');
             }}
           />
           <div className="ref-action-row">
             <button
               type="button"
-              className="btn-save-ref"
+              className={`btn-save-ref ${syncStatus === 'failed' ? 'btn-status-failed' : ''}`}
               onClick={handleSaveReflection}
-              disabled={!reflectionNote.trim()}
+              disabled={!reflectionNote.trim() || syncStatus === 'pending'}
             >
-              {reflectionSaved ? '✓ Refleksi Tersimpan' : 'Simpan Refleksi Saya'}
+              {syncStatus === 'pending' ? '⏳ Mengirim ke Cloud...' :
+               syncStatus === 'success' ? '✓ Tersimpan di Cloud' :
+               syncStatus === 'failed' ? '⚠️ Coba Kirim Ulang' :
+               syncStatus === 'local_only' ? '✓ Tersimpan Lokal' :
+               'Simpan Refleksi Saya'}
             </button>
-            {reflectionSaved && (
-              <span className="ref-saved-badge">
-                {isFirebaseConfigured() ? '✓ Refleksi tersimpan di browser & Cloud Firebase!' : 'Refleksi tersimpan di browser!'}
+
+            {syncStatus === 'local_only' && (
+              <span className="ref-saved-badge sync-status-local">
+                💾 Tersimpan lokal di perangkat ini
+              </span>
+            )}
+
+            {syncStatus === 'pending' && (
+              <span className="ref-saved-badge sync-status-pending">
+                ⏳ Menunggu konfirmasi layanan Cloud...
+              </span>
+            )}
+
+            {syncStatus === 'success' && (
+              <span className="ref-saved-badge sync-status-success">
+                ✓ Berhasil diterima layanan Cloud Firebase!
               </span>
             )}
           </div>
+
+          {/* Banner Galat Sinkronisasi Cloud dengan Tombol Coba Ulang (05-07) */}
+          {syncStatus === 'failed' && (
+            <div className="sync-failure-banner" role="alert">
+              <div className="sync-failure-header">
+                <span className="sync-failure-icon">⚠️</span>
+                <strong>Gagal Menyinkronkan ke Layanan Cloud</strong>
+              </div>
+              <p className="sync-failure-desc">{syncError}</p>
+              <div className="sync-failure-footer">
+                <span className="sync-fallback-text">
+                  Catatan tersimpan di perangkat lokal, namun belum terunggah ke Cloud.
+                </span>
+                <button
+                  type="button"
+                  className="btn-retry-cloud-sync"
+                  onClick={handleSaveReflection}
+                >
+                  🔄 Coba Kirim Ulang
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
