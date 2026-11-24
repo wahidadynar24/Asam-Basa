@@ -3,6 +3,7 @@ import { QUIZ_QUESTIONS } from '../data/quizData';
 import { PREDICTION_OPTIONS } from '../data/engageData';
 import { isFirebaseConfigured } from '../services/firebase';
 import { saveQuizEvaluationRecord, saveStudentProgress } from '../services/firestoreService';
+import { getUserStorageKey } from '../utils/auth';
 
 export default function Results({
   quizScore,
@@ -13,14 +14,17 @@ export default function Results({
   currentUser,
   onReset
 }) {
+  const reflectionKey = getUserStorageKey(currentUser?.id, 'student_reflection');
   const [reflectionNote, setReflectionNote] = useState(
-    localStorage.getItem('student_reflection') || ''
+    () => localStorage.getItem(reflectionKey) || ''
   );
-  const [reflectionSaved, setReflectionSaved] = useState(Boolean(localStorage.getItem('student_reflection')));
+  const [reflectionSaved, setReflectionSaved] = useState(
+    () => Boolean(localStorage.getItem(reflectionKey))
+  );
   const [showReview, setShowReview] = useState(false);
 
   const handleSaveReflection = async () => {
-    localStorage.setItem('student_reflection', reflectionNote);
+    localStorage.setItem(reflectionKey, reflectionNote);
     setReflectionSaved(true);
 
     // Simpan ke Cloud Firestore jika terhubung

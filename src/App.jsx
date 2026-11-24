@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import ProgressBar from './components/ProgressBar';
 import Home from './pages/Home';
@@ -14,7 +14,15 @@ import TeacherAuth from './pages/TeacherAuth';
 import TeacherProfile from './pages/TeacherProfile';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherNavbar from './components/TeacherNavbar';
-import { getActiveSession, logoutUser, saveStudentProgressToLocal } from './utils/auth';
+import { 
+  getActiveSession, 
+  logoutUser, 
+  saveStudentProgressToLocal,
+  getUserStorageKey,
+  getStudentLocalState,
+  getDefaultStudentState,
+  setStudentLocalField 
+} from './utils/auth';
 import { isFirebaseConfigured } from './services/firebase';
 import { saveStudentProgress, getStudentProgress } from './services/firestoreService';
 import './App.css';
@@ -24,6 +32,9 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     return getActiveSession();
   });
+
+  // Track user id currently loaded in state to prevent state leaking and premature cloud sync
+  const isStateLoadedForUserRef = useRef(null);
 
   // Routing berbasis browser path: '/', '/guru/login', '/guru/profil', '/guru/dashboard'
   const [currentPath, setCurrentPath] = useState(() => {
@@ -36,56 +47,24 @@ export default function App() {
   // Status mode pratinjau modul siswa bagi guru
   const [isTeacherPreviewingStudent, setIsTeacherPreviewingStudent] = useState(false);
 
+  // Muat state awal terisolasi (sesuai akun aktif atau tamu)
+  const initialLocal = getStudentLocalState(currentUser?.id);
+
   // 1. Current Step: 0 = Home, 1 = Engage, 2 = Explore, 3 = Explain, 4 = Elaborate, 5 = Evaluate, 6 = Results
-  const [currentStep, setCurrentStep] = useState(() => {
-    const saved = localStorage.getItem('chem_current_step');
-    return saved !== null ? parseInt(saved, 10) : 0;
-  });
+  const [currentStep, setCurrentStep] = useState(initialLocal.currentStep);
 
   // 2. Completed Steps list
-  const [completedSteps, setCompletedSteps] = useState(() => {
-    try {
-      const saved = localStorage.getItem('chem_completed_steps');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [completedSteps, setCompletedSteps] = useState(initialLocal.completedSteps);
 
   // 3. User Prediction (Engage)
-  const [userPrediction, setUserPrediction] = useState(() => {
-    try {
-      const saved = localStorage.getItem('chem_user_prediction');
-      return saved ? JSON.parse(saved) : { optionId: '', optionText: '', note: '' };
-    } catch {
-      return { optionId: '', optionText: '', note: '' };
-    }
-  });
+  const [userPrediction, setUserPrediction] = useState(initialLocal.userPrediction);
 
   // 4. Elaborate Progress
-  const [elaborateProgress, setElaborateProgress] = useState(() => {
-    try {
-      const saved = localStorage.getItem('chem_elaborate_progress');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [elaborateProgress, setElaborateProgress] = useState(initialLocal.elaborateProgress);
 
   // 5. Quiz Answers & Score (Evaluate)
-  const [quizAnswers, setQuizAnswers] = useState(() => {
-    try {
-      const saved = localStorage.getItem('chem_quiz_answers');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [quizScore, setQuizScore] = useState(() => {
-    const saved = localStorage.getItem('chem_quiz_score');
-    return saved !== null ? parseInt(saved, 10) : 0;
-  });
+  const [quizAnswers, setQuizAnswers] = useState(initialLocal.quizAnswers);
+  const [quizScore, setQuizScore] = useState(initialLocal.quizScore);
 
   // Helper Navigasi URL Browser
   const navigate = (path) => {
@@ -120,30 +99,83 @@ export default function App() {
   const isStudent = currentUser && !isTeacher;
   const isTeacherRoute = currentPath.startsWith('/guru');
 
-  // Muat data kemajuan belajar siswa dari Cloud Firestore saat login / mount
+  // Isolasi State & Sinkronisasi Data Kemajuan Belajar Siswa (05-03)
   useEffect(() => {
-    if (!currentUser?.id || !isFirebaseConfigured() || isTeacher) return;
+    const activeId = currentUser?.id || null;
 
-    let isMounted = true;
-    getStudentProgress(currentUser.id).then((res) => {
-      if (isMounted && res.success && res.data) {
-        const cloudData = res.data;
-        if (cloudData.currentStep !== undefined) setCurrentStep(cloudData.currentStep);
-        if (Array.isArray(cloudData.completedSteps)) setCompletedSteps(cloudData.completedSteps);
-        if (cloudData.userPrediction) setUserPrediction(cloudData.userPrediction);
-        if (cloudData.elaborateProgress) setElaborateProgress(cloudData.elaborateProgress);
-        if (cloudData.quizAnswers) setQuizAnswers(cloudData.quizAnswers);
-        if (cloudData.quizScore !== undefined) setQuizScore(cloudData.quizScore);
-        if (cloudData.studentReflection) {
-          localStorage.setItem('student_reflection', cloudData.studentReflection);
+    // 1. KOSONGKAN STATE MEMORI TERLEBIH DAHULU agar tidak mencemari akun lain
+    isStateLoadedForUserRef.current = null;
+    const defaults = getDefaultStudentState();
+    setCurrentStep(defaults.currentStep);
+    setCompletedSteps(defaults.completedSteps);
+    setUserPrediction(defaults.userPrediction);
+    setElaborateProgress(defaults.elaborateProgress);
+    setQuizAnswers(defaults.quizAnswers);
+    setQuizScore(defaults.quizScore);
+
+    if (isTeacher) {
+      isStateLoadedForUserRef.current = activeId;
+      return;
+    }
+
+    // 2. Muat data lokal ber-namespace milik user ini (atau guest)
+    const local = getStudentLocalState(activeId);
+    setCurrentStep(local.currentStep);
+    setCompletedSteps(local.completedSteps);
+    setUserPrediction(local.userPrediction);
+    setElaborateProgress(local.elaborateProgress);
+    setQuizAnswers(local.quizAnswers);
+    setQuizScore(local.quizScore);
+
+    // 3. Jika akun terdaftar dan Firebase aktif, sinkronkan data terbaru dari Cloud Firestore
+    if (activeId && isFirebaseConfigured()) {
+      let isMounted = true;
+      getStudentProgress(activeId).then((res) => {
+        if (isMounted) {
+          if (res.success && res.data) {
+            const cloudData = res.data;
+            if (cloudData.currentStep !== undefined) {
+              setCurrentStep(cloudData.currentStep);
+              setStudentLocalField(activeId, 'current_step', cloudData.currentStep);
+            }
+            if (Array.isArray(cloudData.completedSteps)) {
+              setCompletedSteps(cloudData.completedSteps);
+              setStudentLocalField(activeId, 'completed_steps', cloudData.completedSteps);
+            }
+            if (cloudData.userPrediction) {
+              setUserPrediction(cloudData.userPrediction);
+              setStudentLocalField(activeId, 'user_prediction', cloudData.userPrediction);
+            }
+            if (cloudData.elaborateProgress) {
+              setElaborateProgress(cloudData.elaborateProgress);
+              setStudentLocalField(activeId, 'elaborate_progress', cloudData.elaborateProgress);
+            }
+            if (cloudData.quizAnswers) {
+              setQuizAnswers(cloudData.quizAnswers);
+              setStudentLocalField(activeId, 'quiz_answers', cloudData.quizAnswers);
+            }
+            if (cloudData.quizScore !== undefined) {
+              setQuizScore(cloudData.quizScore);
+              setStudentLocalField(activeId, 'quiz_score', cloudData.quizScore);
+            }
+            if (cloudData.studentReflection) {
+              setStudentLocalField(activeId, 'student_reflection', cloudData.studentReflection);
+            }
+          }
+          isStateLoadedForUserRef.current = activeId;
         }
-      }
-    });
+      }).catch(() => {
+        if (isMounted) isStateLoadedForUserRef.current = activeId;
+      });
 
-    return () => {
-      isMounted = false;
-    };
+      return () => {
+        isMounted = false;
+      };
+    } else {
+      isStateLoadedForUserRef.current = activeId;
+    }
   }, [currentUser?.id, isTeacher]);
+
   useEffect(() => {
     if (isStudent && isTeacherRoute) {
       alert('Akses Ditolak: Halaman ini khusus diperuntukkan bagi akun Guru/Pendidik.');
@@ -153,46 +185,56 @@ export default function App() {
     }
   }, [isStudent, isTeacherRoute]);
 
-  // Sinkronisasi modul pembelajaran ke localStorage setiap ada perubahan (Khusus Siswa)
+  // Sinkronisasi modul pembelajaran ke storage lokal ber-namespace setiap ada perubahan
   useEffect(() => {
-    if (currentUser && !isTeacher) {
-      localStorage.setItem('chem_current_step', currentStep.toString());
+    const activeId = currentUser?.id || null;
+    if (!isTeacher && isStateLoadedForUserRef.current === activeId) {
+      setStudentLocalField(activeId, 'current_step', currentStep);
     }
-  }, [currentStep, currentUser, isTeacher]);
+  }, [currentStep, currentUser?.id, isTeacher]);
 
   useEffect(() => {
-    if (currentUser && !isTeacher) {
-      localStorage.setItem('chem_completed_steps', JSON.stringify(completedSteps));
+    const activeId = currentUser?.id || null;
+    if (!isTeacher && isStateLoadedForUserRef.current === activeId) {
+      setStudentLocalField(activeId, 'completed_steps', completedSteps);
     }
-  }, [completedSteps, currentUser, isTeacher]);
+  }, [completedSteps, currentUser?.id, isTeacher]);
 
   useEffect(() => {
-    if (currentUser && !isTeacher) {
-      localStorage.setItem('chem_user_prediction', JSON.stringify(userPrediction));
+    const activeId = currentUser?.id || null;
+    if (!isTeacher && isStateLoadedForUserRef.current === activeId) {
+      setStudentLocalField(activeId, 'user_prediction', userPrediction);
     }
-  }, [userPrediction, currentUser, isTeacher]);
+  }, [userPrediction, currentUser?.id, isTeacher]);
 
   useEffect(() => {
-    if (currentUser && !isTeacher) {
-      localStorage.setItem('chem_elaborate_progress', JSON.stringify(elaborateProgress));
+    const activeId = currentUser?.id || null;
+    if (!isTeacher && isStateLoadedForUserRef.current === activeId) {
+      setStudentLocalField(activeId, 'elaborate_progress', elaborateProgress);
     }
-  }, [elaborateProgress, currentUser, isTeacher]);
+  }, [elaborateProgress, currentUser?.id, isTeacher]);
 
   useEffect(() => {
-    if (currentUser && !isTeacher) {
-      localStorage.setItem('chem_quiz_answers', JSON.stringify(quizAnswers));
+    const activeId = currentUser?.id || null;
+    if (!isTeacher && isStateLoadedForUserRef.current === activeId) {
+      setStudentLocalField(activeId, 'quiz_answers', quizAnswers);
     }
-  }, [quizAnswers, currentUser, isTeacher]);
+  }, [quizAnswers, currentUser?.id, isTeacher]);
 
   useEffect(() => {
-    if (currentUser && !isTeacher) {
-      localStorage.setItem('chem_quiz_score', quizScore.toString());
+    const activeId = currentUser?.id || null;
+    if (!isTeacher && isStateLoadedForUserRef.current === activeId) {
+      setStudentLocalField(activeId, 'quiz_score', quizScore);
     }
-  }, [quizScore, currentUser, isTeacher]);
+  }, [quizScore, currentUser?.id, isTeacher]);
 
   // Sinkronisasi kemajuan belajar siswa ke Cloud Firestore (Debounced)
   useEffect(() => {
-    if (!currentUser?.id || isTeacher) return;
+    // Pastikan state sudah benar-benar selesai dimuat untuk user ini
+    // Jangan pernah sync jika user belum terautentikasi atau data belum selesai dimuat
+    if (!currentUser?.id || isTeacher || isStateLoadedForUserRef.current !== currentUser.id) return;
+
+    const studentReflection = localStorage.getItem(getUserStorageKey(currentUser.id, 'student_reflection')) || '';
 
     const progressPayload = {
       userId: currentUser.id,
@@ -204,7 +246,7 @@ export default function App() {
       elaborateProgress,
       quizAnswers,
       quizScore,
-      studentReflection: localStorage.getItem('student_reflection') || ''
+      studentReflection
     };
 
     // Simpan ke storage lokal per-siswa agar panel guru dapat membaca
@@ -243,6 +285,15 @@ export default function App() {
   const handleLogout = async () => {
     if (window.confirm(`Hai ${currentUser?.name || 'Siswa'}, apakah kamu yakin ingin keluar dari akun Chemify?`)) {
       await logoutUser();
+      // Kosongkan state memori segera
+      isStateLoadedForUserRef.current = null;
+      const defaults = getDefaultStudentState();
+      setCurrentStep(defaults.currentStep);
+      setCompletedSteps(defaults.completedSteps);
+      setUserPrediction(defaults.userPrediction);
+      setElaborateProgress(defaults.elaborateProgress);
+      setQuizAnswers(defaults.quizAnswers);
+      setQuizScore(defaults.quizScore);
       setCurrentUser(null);
       setIsProfileView(false);
       navigate('/');
@@ -254,6 +305,7 @@ export default function App() {
   const handleTeacherLogout = async () => {
     if (window.confirm(`Bapak/Ibu ${currentUser?.name || 'Guru'}, apakah Anda yakin ingin keluar dari akun Chemify?`)) {
       await logoutUser();
+      isStateLoadedForUserRef.current = null;
       setCurrentUser(null);
       setIsTeacherPreviewingStudent(false);
       navigate('/guru/login');
@@ -278,6 +330,16 @@ export default function App() {
   // Reset progress modul pembelajaran siswa
   const handleReset = () => {
     if (window.confirm('Apakah kamu yakin ingin mengulang seluruh modul pembelajaran dari awal? Progress kuis dan simulasi akan direset.')) {
+      const activeId = currentUser?.id || null;
+      setStudentLocalField(activeId, 'current_step', 0);
+      setStudentLocalField(activeId, 'completed_steps', []);
+      setStudentLocalField(activeId, 'user_prediction', { optionId: '', optionText: '', note: '' });
+      setStudentLocalField(activeId, 'elaborate_progress', {});
+      setStudentLocalField(activeId, 'quiz_answers', {});
+      setStudentLocalField(activeId, 'quiz_score', 0);
+      setStudentLocalField(activeId, 'student_reflection', '');
+      setStudentLocalField(activeId, 'quiz_draft', null);
+
       localStorage.removeItem('chem_current_step');
       localStorage.removeItem('chem_completed_steps');
       localStorage.removeItem('chem_user_prediction');
@@ -306,9 +368,7 @@ export default function App() {
           studentReflection: ''
         });
       }
-
-      setIsProfileView(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      goToStep(0);
     }
   };
 

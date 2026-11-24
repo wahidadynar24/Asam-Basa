@@ -25,6 +25,76 @@ const SESSION_STORAGE_KEY = 'chem_auth_session';
 export { AUTHORIZED_TEACHER_EMAILS, isAuthorizedTeacherEmail };
 
 /**
+ * Menghasilkan kunci localStorage yang terisolasi dengan namespace per-user / guest
+ * Mencegah kebocoran progres belajar antar akun di peramban yang sama
+ */
+export function getUserStorageKey(userId, key) {
+  const prefix = userId ? `chem_${userId}_` : 'chem_guest_';
+  return `${prefix}${key}`;
+}
+
+/**
+ * State default pembelajaran siswa (bersih / kosong)
+ */
+export function getDefaultStudentState() {
+  return {
+    currentStep: 0,
+    completedSteps: [],
+    userPrediction: { optionId: '', optionText: '', note: '' },
+    elaborateProgress: {},
+    quizAnswers: {},
+    quizScore: 0,
+    studentReflection: ''
+  };
+}
+
+/**
+ * Membaca seluruh data pembelajaran lokal yang telah ber-namespace untuk pengguna tertentu
+ */
+export function getStudentLocalState(userId) {
+  try {
+    const currentStepRaw = localStorage.getItem(getUserStorageKey(userId, 'current_step'));
+    const completedStepsRaw = localStorage.getItem(getUserStorageKey(userId, 'completed_steps'));
+    const userPredictionRaw = localStorage.getItem(getUserStorageKey(userId, 'user_prediction'));
+    const elaborateProgressRaw = localStorage.getItem(getUserStorageKey(userId, 'elaborate_progress'));
+    const quizAnswersRaw = localStorage.getItem(getUserStorageKey(userId, 'quiz_answers'));
+    const quizScoreRaw = localStorage.getItem(getUserStorageKey(userId, 'quiz_score'));
+    const studentReflectionRaw = localStorage.getItem(getUserStorageKey(userId, 'student_reflection'));
+
+    return {
+      currentStep: currentStepRaw !== null ? parseInt(currentStepRaw, 10) || 0 : 0,
+      completedSteps: completedStepsRaw ? JSON.parse(completedStepsRaw) : [],
+      userPrediction: userPredictionRaw ? JSON.parse(userPredictionRaw) : { optionId: '', optionText: '', note: '' },
+      elaborateProgress: elaborateProgressRaw ? JSON.parse(elaborateProgressRaw) : {},
+      quizAnswers: quizAnswersRaw ? JSON.parse(quizAnswersRaw) : {},
+      quizScore: quizScoreRaw !== null ? parseInt(quizScoreRaw, 10) || 0 : 0,
+      studentReflection: studentReflectionRaw || ''
+    };
+  } catch (err) {
+    console.warn('Gagal membaca state lokal siswa:', err);
+    return getDefaultStudentState();
+  }
+}
+
+/**
+ * Menyimpan field spesifik ke storage lokal ber-namespace
+ */
+export function setStudentLocalField(userId, key, value) {
+  try {
+    const storageKey = getUserStorageKey(userId, key);
+    if (value === undefined || value === null) {
+      localStorage.removeItem(storageKey);
+    } else if (typeof value === 'object') {
+      localStorage.setItem(storageKey, JSON.stringify(value));
+    } else {
+      localStorage.setItem(storageKey, String(value));
+    }
+  } catch (e) {
+    console.warn('Gagal menyimpan field lokal siswa:', e);
+  }
+}
+
+/**
  * Menerjemahkan kode error Firebase Auth ke pesan Bahasa Indonesia yang ramah pengguna
  */
 function mapFirebaseError(err) {
@@ -962,17 +1032,13 @@ export function getAllStudents() {
       const activeSession = getActiveSession();
       if (!progress && activeSession && activeSession.id === u.id) {
         try {
-          const completedSteps = JSON.parse(localStorage.getItem('chem_completed_steps') || '[]');
-          const quizScore = parseInt(localStorage.getItem('chem_quiz_score') || '0', 10);
-          const currentStep = parseInt(localStorage.getItem('chem_current_step') || '0', 10);
-          const userPrediction = JSON.parse(localStorage.getItem('chem_user_prediction') || 'null');
-          const studentReflection = localStorage.getItem('student_reflection') || '';
+          const userState = getStudentLocalState(u.id);
           progress = {
-            currentStep,
-            completedSteps,
-            quizScore,
-            userPrediction,
-            studentReflection,
+            currentStep: userState.currentStep,
+            completedSteps: userState.completedSteps,
+            quizScore: userState.quizScore,
+            userPrediction: userState.userPrediction,
+            studentReflection: userState.studentReflection,
             updatedAt: new Date().toISOString()
           };
         } catch {
